@@ -1,0 +1,929 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MealMap API",
+    "version": "1.0.0",
+    "summary": "Meal planning, grocery computation, collaboration, and optional AI helpers.",
+    "description": "Versioned REST API with WebSocket/SSE realtime channels. User-scoped ingredients, global seeded categories, planner with configurable slots (breakfast, snackAM, lunch, snackPM, dinner), grocery computation with simple unit conversion, N-trip splitting, templates, exports, notifications, sharing, and optional features (nutrition, import, optimizer, normalization, substitutions, barcode, OCR).",
+    "termsOfService": "https://api.mealmap.app/terms",
+    "contact": { "name": "MealMap API Support", "email": "support@mealmap.app" },
+    "license": { "name": "Proprietary" }
+  },
+  "servers": [
+    { "url": "https://api.mealmap.app/v1", "description": "Production" },
+    { "url": "https://staging.api.mealmap.app/v1", "description": "Staging" }
+  ],
+  "tags": [
+    { "name": "Auth" }, { "name": "Profiles" }, { "name": "Households" },
+    { "name": "Ingredients" }, { "name": "Categories" }, { "name": "Recipes" },
+    { "name": "Planner" }, { "name": "Pantry" }, { "name": "Grocery" },
+    { "name": "Templates" }, { "name": "Exports" }, { "name": "Sharing" },
+    { "name": "Realtime" }, { "name": "Notifications" }, { "name": "Activity" },
+    { "name": "Admin" }, { "name": "Optional/Nutrition" }, { "name": "Optional/Import" },
+    { "name": "Optional/Optimizer" }, { "name": "Optional/Normalization" },
+    { "name": "Optional/Substitutions" }, { "name": "Optional/Barcode" },
+    { "name": "Optional/OCR" }
+  ],
+  "externalDocs": { "description": "Developer portal", "url": "https://developers.mealmap.app" },
+  "security": [{ "bearerAuth": [], "tenant": [] }],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Access token (expires ~15m). Use refresh to obtain new access."
+      },
+      "tenant": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Client-Id",
+        "description": "Optional client identifier for rate partitioning."
+      }
+    },
+    "parameters": {
+      "pageLimit": {
+        "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 25 },
+        "description": "Items per page (default 25, max 100)."
+      },
+      "pageCursor": {
+        "name": "cursor", "in": "query", "schema": { "type": "string" },
+        "description": "Opaque cursor for pagination."
+      },
+      "updatedSince": {
+        "name": "updatedSince", "in": "query",
+        "schema": { "type": "string", "format": "date-time" },
+        "description": "Return items updated at or after this UTC timestamp."
+      },
+      "timezoneHeader": {
+        "name": "X-Timezone", "in": "header",
+        "schema": { "type": "string", "default": "Europe/Amsterdam" },
+        "description": "Client-preferred IANA timezone for date rendering."
+      }
+    },
+    "headers": {
+      "RateLimit-Limit": { "schema": { "type": "integer" } },
+      "RateLimit-Remaining": { "schema": { "type": "integer" } },
+      "RateLimit-Reset": { "schema": { "type": "integer" }, "description": "Seconds until quota resets" },
+      "Trace-Id": { "schema": { "type": "string" } }
+    },
+    "responses": {
+      "Problem": {
+        "description": "Problem Details error.",
+        "headers": { "Trace-Id": { "$ref": "#/components/headers/Trace-Id" } },
+        "content": {
+          "application/problem+json": { "schema": { "$ref": "#/components/schemas/Problem" } }
+        }
+      },
+      "NoContent": { "description": "No content." }
+    },
+    "schemas": {
+      "Problem": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "format": "uri" },
+          "title": { "type": "string" },
+          "status": { "type": "integer" },
+          "detail": { "type": "string" },
+          "instance": { "type": "string", "format": "uri" },
+          "traceId": { "type": "string" },
+          "errors": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } } }
+        },
+        "required": ["title", "status"]
+      },
+
+      "UUID": { "type": "string", "format": "uuid" },
+      "ISODateTime": { "type": "string", "format": "date-time" },
+
+      "Unit": {
+        "type": "string",
+        "enum": ["g", "kg", "ml", "l", "piece", "pack"]
+      },
+      "PackageSize": {
+        "type": "object",
+        "properties": {
+          "amount": { "type": "number", "minimum": 0 },
+          "unit": { "$ref": "#/components/schemas/Unit" }
+        },
+        "required": ["amount", "unit"]
+      },
+
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/UUID" },
+          "email": { "type": "string", "format": "email" },
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "format": "uri" },
+          "createdAt": { "$ref": "#/components/schemas/ISODateTime" },
+          "householdId": { "$ref": "#/components/schemas/UUID" },
+          "mfaEnabled": { "type": "boolean", "default": false },
+          "emailVerified": { "type": "boolean", "default": false }
+        },
+        "required": ["id", "email", "displayName", "createdAt"]
+      },
+
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "userId": { "$ref": "#/components/schemas/UUID" },
+          "role": { "type": "string", "enum": ["personal", "household", "coach"] },
+          "mealSlots": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["breakfast", "snackAM", "lunch", "snackPM", "dinner"] },
+            "minItems": 1, "maxItems": 5,
+            "description": "Configurable subset/order per user from the fixed set."
+          }
+        },
+        "required": ["userId", "role", "mealSlots"]
+      },
+
+      "Household": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/UUID" },
+          "name": { "type": "string" },
+          "adminId": { "$ref": "#/components/schemas/UUID" },
+          "members": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/User" }
+          },
+          "createdAt": { "$ref": "#/components/schemas/ISODateTime" }
+        },
+        "required": ["id", "name", "adminId", "createdAt"]
+      },
+
+      "Ingredient": {
+        "type": "object",
+        "description": "User-scoped ingredient.",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/UUID" },
+          "ownerUserId": { "$ref": "#/components/schemas/UUID" },
+          "name": { "type": "string" },
+          "categoryId": { "$ref": "#/components/schemas/UUID" },
+          "defaultUnit": { "$ref": "#/components/schemas/Unit" },
+          "packageSize": { "$ref": "#/components/schemas/PackageSize" },
+          "notes": { "type": "string" },
+          "createdAt": { "$ref": "#/components/schemas/ISODateTime" },
+          "updatedAt": { "$ref": "#/components/schemas/ISODateTime" }
+        },
+        "required": ["id", "ownerUserId", "name", "categoryId", "defaultUnit", "packageSize", "createdAt"]
+      },
+
+      "Category": {
+        "type": "object",
+        "description": "Global seeded category (admin-edit only).",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/UUID" },
+          "name": { "type": "string" },
+          "sortOrder": { "type": "integer" }
+        },
+        "required": ["id", "name"]
+      },
+
+      "Quantity": {
+        "type": "object",
+        "properties": {
+          "amount": { "type": "number", "minimum": 0 },
+          "unit": { "$ref": "#/components/schemas/Unit" }
+        },
+        "required": ["amount", "unit"]
+      },
+
+      "RecipeItem": {
+        "type": "object",
+        "properties": {
+          "ingredientId": { "$ref": "#/components/schemas/UUID" },
+          "quantity": { "$ref": "#/components/schemas/Quantity" },
+          "packageNote": { "type": "string", "description": "Optional free-text packaging note" }
+        },
+        "required": ["ingredientId", "quantity"]
+      },
+
+      "Recipe": {
+        "type": "object",
+        "description": "A reusable set of ingredient items with an optional external URL.",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/UUID" },
+          "name": { "type": "string" },
+          "externalUrl": { "type": "string", "format": "uri", "nullable": true },
+          "items": {
+            "type": "array", "maxItems": 150,
+            "items": { "$ref": "#/components/schemas/RecipeItem" }
+          },
+          "createdAt": { "$ref": "#/components/schemas/ISODateTime" },
+          "updatedAt": { "$ref": "#/components/schemas/ISODateTime" }
+        },
+        "required": ["id", "name", "items", "createdAt"]
+      },
+
+      "PlannerItem": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/UUID" },
+          "date": { "type": "string", "format": "date" },
+          "slot": { "type": "string", "enum": ["breakfast", "snackAM", "lunch", "snackPM", "dinner"] },
+          "recipeId": { "$ref": "#/components/schemas/UUID", "nullable": true },
+          "adHocItems": { "type": "array", "items": { "$ref": "#/components/schemas/RecipeItem" } },
+          "portions": { "type": "number", "minimum": 0.1, "default": 1.0 },
+          "addedByUserId": { "$ref": "#/components/schemas/UUID" }
+        },
+        "required": ["id", "date", "slot", "portions"]
+      },
+
+      "PlannerWeek": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/UUID" },
+          "startDate": { "type": "string", "format": "date", "description": "Monday of the week" },
+          "householdId": { "$ref": "#/components/schemas/UUID", "nullable": true, "description": "If null, personal plan" },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/PlannerItem" } },
+          "createdAt": { "$ref": "#/components/schemas/ISODateTime" },
+          "updatedAt": { "$ref": "#/components/schemas/ISODateTime" }
+        },
+        "required": ["id", "startDate", "items", "createdAt"]
+      },
+
+      "PantryItem": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/UUID" },
+          "ingredientId": { "$ref": "#/components/schemas/UUID" },
+          "quantity": { "$ref": "#/components/schemas/Quantity" },
+          "updatedAt": { "$ref": "#/components/schemas/ISODateTime" }
+        },
+        "required": ["id", "ingredientId", "quantity"]
+      },
+
+      "GroceryItem": {
+        "type": "object",
+        "properties": {
+          "ingredientId": { "$ref": "#/components/schemas/UUID" },
+          "needed": { "$ref": "#/components/schemas/Quantity" },
+          "afterPantry": { "$ref": "#/components/schemas/Quantity" },
+          "categoryId": { "$ref": "#/components/schemas/UUID" },
+          "checked": { "type": "boolean", "default": false }
+        },
+        "required": ["ingredientId", "needed", "afterPantry", "categoryId"]
+      },
+
+      "GroceryList": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/UUID" },
+          "planWeekId": { "$ref": "#/components/schemas/UUID" },
+          "trips": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tripIndex": { "type": "integer" },
+                "dateRange": { "type": "object", "properties": {
+                  "from": { "type": "string", "format": "date" },
+                  "to": { "type": "string", "format": "date" }
+                }, "required": ["from", "to"] },
+                "items": { "type": "array", "items": { "$ref": "#/components/schemas/GroceryItem" } }
+              },
+              "required": ["tripIndex", "dateRange", "items"]
+            }
+          },
+          "createdAt": { "$ref": "#/components/schemas/ISODateTime" },
+          "updatedAt": { "$ref": "#/components/schemas/ISODateTime" }
+        },
+        "required": ["id", "planWeekId", "trips", "createdAt"]
+      },
+
+      "Template": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/UUID" },
+          "name": { "type": "string" },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/PlannerItem" } },
+          "createdAt": { "$ref": "#/components/schemas/ISODateTime" }
+        },
+        "required": ["id", "name", "items", "createdAt"]
+      },
+
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/UUID" },
+          "type": { "type": "string", "enum": ["share.invite", "planner.updated", "grocery.checked", "pantry.changed"] },
+          "message": { "type": "string" },
+          "createdAt": { "$ref": "#/components/schemas/ISODateTime" },
+          "read": { "type": "boolean", "default": false }
+        },
+        "required": ["id", "type", "message", "createdAt"]
+      },
+
+      "Activity": {
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/UUID" },
+          "actorId": { "$ref": "#/components/schemas/UUID" },
+          "action": { "type": "string" },
+          "targetType": { "type": "string" },
+          "targetId": { "type": "string" },
+          "createdAt": { "$ref": "#/components/schemas/ISODateTime" }
+        },
+        "required": ["id", "actorId", "action", "createdAt"]
+      }
+    }
+  },
+
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": {
+              "type": "object",
+              "properties": {
+                "email": { "type": "string", "format": "email" },
+                "password": { "type": "string", "minLength": 8 },
+                "displayName": { "type": "string" }
+              },
+              "required": ["email", "password", "displayName"]
+            } }
+          }
+        },
+        "responses": {
+          "201": { "description": "User created; verification email sent.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } },
+          "400": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "properties": {
+              "email": { "type": "string", "format": "email" },
+              "password": { "type": "string" },
+              "mfaCode": { "type": "string", "minLength": 6, "maxLength": 6 }
+            },
+            "required": ["email", "password"]
+          } } }
+        },
+        "responses": {
+          "200": { "description": "Tokens issued.",
+            "headers": {
+              "Set-Cookie": { "description": "Optional refresh token httpOnly; SameSite=Lax", "schema": { "type": "string" } }
+            },
+            "content": { "application/json": { "schema": {
+              "type": "object",
+              "properties": {
+                "accessToken": { "type": "string" },
+                "expiresIn": { "type": "integer" },
+                "user": { "$ref": "#/components/schemas/User" }
+              },
+              "required": ["accessToken", "expiresIn", "user"]
+            } } }
+          },
+          "401": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh token",
+        "responses": {
+          "200": { "description": "New access token.", "content": { "application/json": { "schema": {
+            "type": "object",
+            "properties": { "accessToken": { "type": "string" }, "expiresIn": { "type": "integer" } },
+            "required": ["accessToken", "expiresIn"]
+          } } } },
+          "401": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Logout and revoke refresh",
+        "responses": { "204": { "$ref": "#/components/responses/NoContent" } }
+      }
+    },
+    "/auth/verify/start": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Send verification email",
+        "responses": { "204": { "$ref": "#/components/responses/NoContent" } }
+      }
+    },
+    "/auth/verify/confirm": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Confirm email verification",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": {
+          "type": "object", "properties": { "token": { "type": "string" } }, "required": ["token"]
+        } } } },
+        "responses": { "204": { "$ref": "#/components/responses/NoContent" }, "400": { "$ref": "#/components/responses/Problem" } }
+      }
+    },
+    "/auth/mfa/setup": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Begin TOTP MFA enrollment",
+        "responses": {
+          "200": { "description": "Secret and QR info", "content": { "application/json": { "schema": {
+            "type": "object",
+            "properties": { "secret": { "type": "string" }, "otpauthUrl": { "type": "string" } },
+            "required": ["secret", "otpauthUrl"]
+          } } } }
+        }
+      }
+    },
+    "/auth/mfa/confirm": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Confirm MFA enrollment with code",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": {
+          "type": "object", "properties": { "code": { "type": "string" } }, "required": ["code"]
+        } } } },
+        "responses": { "204": { "$ref": "#/components/responses/NoContent" }, "400": { "$ref": "#/components/responses/Problem" } }
+      }
+    },
+    "/auth/mfa/disable": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Disable MFA",
+        "responses": { "204": { "$ref": "#/components/responses/NoContent" } }
+      }
+    },
+
+    "/me": {
+      "get": {
+        "tags": ["Profiles"],
+        "summary": "Current user profile",
+        "parameters": [{ "$ref": "#/components/parameters/timezoneHeader" }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/households": {
+      "post": {
+        "tags": ["Households"],
+        "summary": "Create household (creator becomes admin)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "name": { "type": "string" } }, "required": ["name"] } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Household" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "get": {
+        "tags": ["Households"],
+        "summary": "List my households",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Household" } } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/households/{householdId}": {
+      "parameters": [{ "name": "householdId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
+      "get": {
+        "tags": ["Households"],
+        "summary": "Get household",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Household" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "delete": {
+        "tags": ["Households"],
+        "summary": "Delete household (admin only)",
+        "responses": { "204": { "$ref": "#/components/responses/NoContent" } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/households/{householdId}/invites": {
+      "post": {
+        "tags": ["Sharing"],
+        "summary": "Create invite link for household (admin)",
+        "parameters": [{ "name": "householdId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": {
+          "type": "object", "properties": { "expiresInHours": { "type": "integer", "default": 168 } }
+        } } } },
+        "responses": { "201": { "description": "Invite created", "content": { "application/json": { "schema": {
+          "type": "object", "properties": { "inviteId": { "$ref": "#/components/schemas/UUID" }, "url": { "type": "string", "format": "uri" }, "expiresAt": { "$ref": "#/components/schemas/ISODateTime" } }
+        } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/invites/{inviteId}/accept": {
+      "post": {
+        "tags": ["Sharing"],
+        "summary": "Accept invite link (household or resource)",
+        "parameters": [{ "name": "inviteId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
+        "responses": { "204": { "$ref": "#/components/responses/NoContent" }, "400": { "$ref": "#/components/responses/Problem" } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/ingredients": {
+      "get": {
+        "tags": ["Ingredients"],
+        "summary": "List my ingredients",
+        "parameters": [
+          { "$ref": "#/components/parameters/pageLimit" }, { "$ref": "#/components/parameters/pageCursor" },
+          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Search by name" },
+          { "name": "categoryId", "in": "query", "schema": { "$ref": "#/components/schemas/UUID" } },
+          { "$ref": "#/components/parameters/updatedSince" }
+        ],
+        "responses": { "200": { "description": "OK", "headers": { "RateLimit-Limit": { "$ref": "#/components/headers/RateLimit-Limit" }, "RateLimit-Remaining": { "$ref": "#/components/headers/RateLimit-Remaining" }, "RateLimit-Reset": { "$ref": "#/components/headers/RateLimit-Reset" } }, "content": { "application/json": { "schema": {
+          "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Ingredient" } }, "nextCursor": { "type": "string", "nullable": true } }
+        } } } } },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "post": {
+        "tags": ["Ingredients"],
+        "summary": "Create ingredient (user-scoped)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "categoryId": { "$ref": "#/components/schemas/UUID" },
+            "defaultUnit": { "$ref": "#/components/schemas/Unit" },
+            "packageSize": { "$ref": "#/components/schemas/PackageSize" },
+            "notes": { "type": "string" }
+          },
+          "required": ["name", "categoryId", "defaultUnit", "packageSize"]
+        } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Ingredient" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/ingredients/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
+      "get": {
+        "tags": ["Ingredients"], "summary": "Get ingredient",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Ingredient" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "patch": {
+        "tags": ["Ingredients"], "summary": "Update ingredient",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Ingredient" } } } },
+        "responses": { "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Ingredient" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "delete": {
+        "tags": ["Ingredients"], "summary": "Delete ingredient",
+        "responses": { "204": { "$ref": "#/components/responses/NoContent" } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/categories": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "List global categories (seeded, admin-edit only)",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Category" } } } } } }
+      }
+    },
+    "/admin/categories": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Create category (admin only)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "name": { "type": "string" }, "sortOrder": { "type": "integer" } }, "required": ["name"] } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Category" } } } } }
+      }
+    },
+
+    "/recipes": {
+      "get": {
+        "tags": ["Recipes"], "summary": "List recipes",
+        "parameters": [
+          { "$ref": "#/components/parameters/pageLimit" }, { "$ref": "#/components/parameters/pageCursor" },
+          { "name": "q", "in": "query", "schema": { "type": "string" } }, { "$ref": "#/components/parameters/updatedSince" }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Recipe" } }, "nextCursor": { "type": "string", "nullable": true } } } } } } },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "post": {
+        "tags": ["Recipes"], "summary": "Create recipe",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Recipe" } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Recipe" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/recipes/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
+      "get": { "tags": ["Recipes"], "summary": "Get recipe", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Recipe" } } } } }, "security": [{ "bearerAuth": [] }] },
+      "patch": { "tags": ["Recipes"], "summary": "Update recipe", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Recipe" } } } }, "responses": { "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Recipe" } } } } }, "security": [{ "bearerAuth": [] }] },
+      "delete": { "tags": ["Recipes"], "summary": "Delete recipe", "responses": { "204": { "$ref": "#/components/responses/NoContent" } }, "security": [{ "bearerAuth": [] }] }
+    },
+
+    "/planner/weeks": {
+      "get": {
+        "tags": ["Planner"], "summary": "List planner weeks (personal + household)",
+        "parameters": [
+          { "$ref": "#/components/parameters/pageLimit" }, { "$ref": "#/components/parameters/pageCursor" },
+          { "name": "from", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/PlannerWeek" } }, "nextCursor": { "type": "string", "nullable": true } } } } } } },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "post": {
+        "tags": ["Planner"], "summary": "Create planner week",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlannerWeek" } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlannerWeek" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/planner/weeks/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "schema": { "$ref": "#/components/schemas/UUID" }, "required": true }],
+      "get": { "tags": ["Planner"], "summary": "Get week", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlannerWeek" } } } } }, "security": [{ "bearerAuth": [] }] },
+      "patch": { "tags": ["Planner"], "summary": "Update week", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlannerWeek" } } } }, "responses": { "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlannerWeek" } } } } }, "security": [{ "bearerAuth": [] }] },
+      "delete": { "tags": ["Planner"], "summary": "Delete week", "responses": { "204": { "$ref": "#/components/responses/NoContent" } }, "security": [{ "bearerAuth": [] }] }
+    },
+    "/planner/weeks/{id}/share": {
+      "post": {
+        "tags": ["Sharing"], "summary": "Create invite link to share personal plan",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "readOnly": { "type": "boolean", "default": true }, "expiresInHours": { "type": "integer", "default": 168 } } } } } },
+        "responses": { "201": { "description": "Invite created", "content": { "application/json": { "schema": { "type": "object", "properties": { "inviteId": { "$ref": "#/components/schemas/UUID" }, "url": { "type": "string", "format": "uri" } }, "required": ["inviteId", "url"] } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/pantry": {
+      "get": { "tags": ["Pantry"], "summary": "List pantry items", "parameters": [{ "$ref": "#/components/parameters/pageLimit" }, { "$ref": "#/components/parameters/pageCursor" }], "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/PantryItem" } }, "nextCursor": { "type": "string", "nullable": true } } } } } } }, "security": [{ "bearerAuth": [] }] },
+      "post": { "tags": ["Pantry"], "summary": "Add pantry item", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PantryItem" } } } }, "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PantryItem" } } } } }, "security": [{ "bearerAuth": [] }] }
+    },
+    "/pantry/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
+      "patch": { "tags": ["Pantry"], "summary": "Update pantry item", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PantryItem" } } } }, "responses": { "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PantryItem" } } } } }, "security": [{ "bearerAuth": [] }] },
+      "delete": { "tags": ["Pantry"], "summary": "Delete pantry item", "responses": { "204": { "$ref": "#/components/responses/NoContent" } }, "security": [{ "bearerAuth": [] }] }
+    },
+
+    "/grocery/compute": {
+      "post": {
+        "tags": ["Grocery"], "summary": "Compute grocery list from planner week, aggregate by category, de-dup, subtract pantry",
+        "parameters": [{ "$ref": "#/components/parameters/timezoneHeader" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": {
+          "type": "object",
+          "properties": {
+            "planWeekId": { "$ref": "#/components/schemas/UUID" },
+            "trips": { "type": "integer", "minimum": 1, "maximum": 7, "default": 2 },
+            "splitRule": { "type": "string", "enum": ["Sun-Wed_Thu-Sun", "custom"], "default": "Sun-Wed_Thu-Sun" },
+            "customSplits": { "type": "array", "items": { "type": "object", "properties": { "from": { "type": "string", "format": "date" }, "to": { "type": "string", "format": "date" } }, "required": ["from", "to"] } }
+          },
+          "required": ["planWeekId"]
+        } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GroceryList" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/grocery/lists/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
+      "patch": {
+        "tags": ["Grocery"], "summary": "Update checks/edits on grocery list",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": {
+          "type": "object", "properties": { "trips": { "type": "array", "items": { "type": "object", "properties": { "tripIndex": { "type": "integer" }, "items": { "type": "array", "items": { "$ref": "#/components/schemas/GroceryItem" } } }, "required": ["tripIndex", "items"] } } }
+        } } } },
+        "responses": { "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GroceryList" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/templates": {
+      "get": { "tags": ["Templates"], "summary": "List templates", "parameters": [{ "$ref": "#/components/parameters/pageLimit" }, { "$ref": "#/components/parameters/pageCursor" }], "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Template" } }, "nextCursor": { "type": "string", "nullable": true } } } } } } }, "security": [{ "bearerAuth": [] }] },
+      "post": { "tags": ["Templates"], "summary": "Create template", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Template" } } } }, "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Template" } } } } }, "security": [{ "bearerAuth": [] }] }
+    },
+    "/templates/{id}/apply": {
+      "post": {
+        "tags": ["Templates"], "summary": "Apply template to a week (ask behavior)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": {
+          "type": "object", "properties": {
+            "targetWeekId": { "$ref": "#/components/schemas/UUID" },
+            "behavior": { "type": "string", "enum": ["overwrite", "merge", "append"], "description": "Client asks the user and sends preference." }
+          },
+          "required": ["targetWeekId", "behavior"]
+        } } } },
+        "responses": { "200": { "description": "Applied", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlannerWeek" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/exports/grocery/{listId}.csv": {
+      "get": {
+        "tags": ["Exports"], "summary": "Export grocery as CSV (logo, category headers, checkboxes)",
+        "parameters": [{ "name": "listId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
+        "responses": { "200": { "description": "CSV", "content": { "text/csv": { "schema": { "type": "string", "format": "binary" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/exports/grocery/{listId}.pdf": {
+      "get": {
+        "tags": ["Exports"], "summary": "Export grocery as PDF (logo, category headers, checkboxes)",
+        "parameters": [{ "name": "listId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
+        "responses": { "200": { "description": "PDF", "content": { "application/pdf": { "schema": { "type": "string", "format": "binary" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/exports/data.zip": {
+      "get": {
+        "tags": ["Exports"], "summary": "Full data export (incl. activity logs + last 30 notifications)",
+        "responses": { "200": { "description": "ZIP", "content": { "application/zip": { "schema": { "type": "string", "format": "binary" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/notifications": {
+      "get": {
+        "tags": ["Notifications"], "summary": "List my notifications (most recent first, returns last 30 by default)",
+        "parameters": [{ "$ref": "#/components/parameters/pageLimit" }, { "$ref": "#/components/parameters/pageCursor" }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Notification" } }, "nextCursor": { "type": "string", "nullable": true } } } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/activity": {
+      "get": {
+        "tags": ["Activity"], "summary": "List activity log entries",
+        "parameters": [{ "$ref": "#/components/parameters/pageLimit" }, { "$ref": "#/components/parameters/pageCursor" }, { "$ref": "#/components/parameters/updatedSince" }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Activity" } }, "nextCursor": { "type": "string", "nullable": true } } } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/realtime/ws": {
+      "get": {
+        "tags": ["Realtime"],
+        "summary": "WebSocket (STOMP) endpoint for presence and live edits",
+        "description": "Connect via WS and subscribe to topics: `/topic/households/{householdId}/presence`, `/topic/planner/{weekId}`, `/topic/grocery/{listId}`. Client sends item-level optimistic changes to `/app/...` destinations. Rate limit: <=10 ops/sec/user.",
+        "responses": { "101": { "description": "Switching Protocols" } }
+      }
+    },
+    "/realtime/sse": {
+      "get": {
+        "tags": ["Realtime"], "summary": "SSE read-only stream (mirror of WS topics)",
+        "parameters": [{ "name": "topic", "in": "query", "required": true, "schema": { "type": "string" }, "description": "E.g., households/{householdId}/presence or planner/{weekId}" }],
+        "responses": { "200": { "description": "Event stream", "content": { "text/event-stream": { "schema": { "type": "string" } } } } }
+      }
+    },
+
+    "/optional/nutrition/hints": {
+      "get": {
+        "tags": ["Optional/Nutrition"],
+        "summary": "Nutrition hints for ingredients or recipe totals",
+        "x-feature-optional": true,
+        "parameters": [
+          { "name": "recipeId", "in": "query", "schema": { "$ref": "#/components/schemas/UUID" } },
+          { "name": "ingredientIds", "in": "query", "schema": { "type": "array", "items": { "$ref": "#/components/schemas/UUID" } }, "style": "form", "explode": true }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/optional/import/recipe": {
+      "post": {
+        "tags": ["Optional/Import"], "summary": "Import recipe by URL with fallback",
+        "x-feature-optional": true,
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "url": { "type": "string", "format": "uri" } }, "required": ["url"] } } } },
+        "responses": { "201": { "description": "Imported recipe draft", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Recipe" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/optional/optimizer/plan": {
+      "post": {
+        "tags": ["Optional/Optimizer"], "summary": "Optimize a week's plan (OR-Tools-style solver)",
+        "x-feature-optional": true,
+        "requestBody": { "required": true, "content": { "application/json": { "schema": {
+          "type": "object", "properties": {
+            "weekId": { "$ref": "#/components/schemas/UUID" },
+            "goals": { "type": "array", "items": { "type": "string", "enum": ["minimizeCost", "maximizeVariety", "balancedMacros"] } },
+            "constraints": { "type": "object", "additionalProperties": true }
+          },
+          "required": ["weekId"]
+        } } } },
+        "responses": { "200": { "description": "Optimized plan", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlannerWeek" } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/optional/normalization/convert": {
+      "post": {
+        "tags": ["Optional/Normalization"], "summary": "Normalize units and convert",
+        "x-feature-optional": true,
+        "requestBody": { "required": true, "content": { "application/json": { "schema": {
+          "type": "object", "properties": {
+            "items": { "type": "array", "items": { "$ref": "#/components/schemas/RecipeItem" } },
+            "targetUnit": { "$ref": "#/components/schemas/Unit" }
+          },
+          "required": ["items", "targetUnit"]
+        } } } },
+        "responses": { "200": { "description": "Normalized items", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RecipeItem" } } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/optional/substitutions": {
+      "post": {
+        "tags": ["Optional/Substitutions"], "summary": "Suggest pantry-aware substitutions",
+        "x-feature-optional": true,
+        "requestBody": { "required": true, "content": { "application/json": { "schema": {
+          "type": "object", "properties": { "missing": { "type": "array", "items": { "$ref": "#/components/schemas/RecipeItem" } } },
+          "required": ["missing"]
+        } } } },
+        "responses": { "200": { "description": "Substitution suggestions", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object", "additionalProperties": true } } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/optional/barcode/lookup": {
+      "get": {
+        "tags": ["Optional/Barcode"], "summary": "Barcode → Open Food Facts lookup",
+        "x-feature-optional": true,
+        "parameters": [{ "name": "ean", "in": "query", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Product info", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } } },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/optional/ocr/receipts": {
+      "post": {
+        "tags": ["Optional/OCR"], "summary": "Create OCR job and obtain upload URL (max 10 MB)",
+        "x-feature-optional": true,
+        "requestBody": { "required": false },
+        "responses": {
+          "201": {
+            "description": "Job created",
+            "content": { "application/json": { "schema": {
+              "type": "object",
+              "properties": {
+                "jobId": { "$ref": "#/components/schemas/UUID" },
+                "uploadUrl": { "type": "string", "format": "uri" },
+                "maxBytes": { "type": "integer", "default": 10485760 }
+              },
+              "required": ["jobId", "uploadUrl"]
+            } } }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/optional/ocr/receipts/{jobId}/process": {
+      "post": {
+        "tags": ["Optional/OCR"], "summary": "Process uploaded image and return parsed items (source deleted immediately)",
+        "x-feature-optional": true,
+        "parameters": [{ "name": "jobId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
+        "responses": {
+          "200": { "description": "Parsed lines", "content": { "application/json": { "schema": {
+            "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/RecipeItem" } } }
+          } } } }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    }
+  },
+
+  "webhooks": {
+    "plan.updated": {
+      "post": {
+        "summary": "Webhook: Planner updated",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlannerWeek" } } } },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "grocery.finalized": {
+      "post": {
+        "summary": "Webhook: Grocery list finalized",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GroceryList" } } } },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "share.created": {
+      "post": {
+        "summary": "Webhook: A share/invite was created",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "pantry.changed": {
+      "post": {
+        "summary": "Webhook: Pantry updated",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
+        "responses": { "200": { "description": "OK" } }
+      }
+    }
+  },
+
+  "x-limits": {
+    "rate": { "defaultPerIpPerMin": 60, "authPerIpPerMin": 10, "wsOpsPerUserPerSec": 10 },
+    "resources": {
+      "maxRecipeItems": 150,
+      "maxPantryItemsPerUser": 500,
+      "maxTemplates": 30,
+      "maxHouseholdMembers": 20,
+      "maxNotificationsReturned": 30
+    }
+  }
+}
