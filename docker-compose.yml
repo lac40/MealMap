@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mealmap-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "YourStrong@Passw0rd"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    networks:
+      - mealmap-network
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "YourStrong@Passw0rd" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  # Optional: Database initialization container
+  mssql-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      mssql:
+        condition: service_healthy
+    command: >
+      /bin/bash -c "
+      /opt/mssql-tools/bin/sqlcmd -S mssql -U sa -P 'YourStrong@Passw0rd' -Q 'IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N''mealmap'') CREATE DATABASE mealmap' &&
+      echo 'Database created successfully'
+      "
+    networks:
+      - mealmap-network
+
+volumes:
+  mssql-data:
+
+networks:
+  mealmap-network:
+    driver: bridge

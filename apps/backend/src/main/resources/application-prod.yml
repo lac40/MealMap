@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:sqlserver://${DB_HOST:localhost}:${DB_PORT:1433};databaseName=${DB_NAME:mealmap};encrypt=true;trustServerCertificate=false
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    username: ${DB_USER:sa}
+    password: ${DB_PASSWORD}
+  
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.SQLServerDialect
+    show-sql: false
+
+logging:
+  level:
+    com.mealmap: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
