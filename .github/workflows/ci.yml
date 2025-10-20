@@ -19,7 +19,6 @@ jobs:
       with:
         java-version: '21'
         distribution: 'temurin'
-        cache: 'maven'
     
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -28,13 +27,20 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'apps/frontend/package-lock.json'
     
-    - name: Build Java Backend
+    - name: Make Gradle wrapper executable
       run: |
-        mvn clean install -DskipTests
+        cd apps/backend
+        chmod +x gradlew
+    
+    - name: Build Java Backend with Gradle
+      run: |
+        cd apps/backend
+        ./gradlew build -x test
     
     - name: Run Java Tests
       run: |
-        mvn test
+        cd apps/backend
+        ./gradlew test
     
     - name: Build TypeScript Frontend
       run: |
