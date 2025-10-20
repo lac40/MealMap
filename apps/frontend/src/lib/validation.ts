@@ -119,3 +119,41 @@ export const ingredientSchema = z.object({
 })
 
 export type IngredientFormData = z.infer<typeof ingredientSchema>
+
+// Recipe validation
+export const recipeItemSchema = z.object({
+  ingredientId: z.string().uuid('Invalid ingredient ID'),
+  quantity: z.object({
+    amount: z
+      .number({ invalid_type_error: 'Amount must be a number' })
+      .or(z.string().transform((val) => Number(val)))
+      .pipe(
+        z
+          .number()
+          .positive('Amount must be greater than 0')
+          .max(100000, 'Amount is too large')
+      ),
+    unit: z.enum(['g', 'kg', 'ml', 'l', 'piece', 'pack'], {
+      errorMap: () => ({ message: 'Please select a unit' }),
+    }),
+  }),
+  packageNote: z.string().max(100, 'Note is too long').optional(),
+})
+
+export const recipeSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Recipe name is required')
+    .max(200, 'Recipe name is too long'),
+  externalUrl: z
+    .string()
+    .url('Must be a valid URL')
+    .optional()
+    .or(z.literal('')),
+  items: z
+    .array(recipeItemSchema)
+    .min(1, 'Recipe must have at least one ingredient')
+    .max(150, 'Too many ingredients'),
+})
+
+export type RecipeFormData = z.infer<typeof recipeSchema>
