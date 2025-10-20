@@ -107,8 +107,8 @@ export const ingredientSchema = z.object({
   }),
   packageAmount: z
     .number({ invalid_type_error: 'Package amount must be a number' })
-    .positive('Package amount must be greater than 0')
-    .max(100000, 'Package amount is too large'),
+    .or(z.string().transform((val) => Number(val)))
+    .pipe(z.number().positive('Package amount must be greater than 0').max(100000, 'Package amount is too large')),
   packageUnit: z.enum(['g', 'kg', 'ml', 'l', 'piece', 'pack'], {
     errorMap: () => ({ message: 'Please select a package unit' }),
   }),
