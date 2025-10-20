@@ -89,3 +89,33 @@ export const passwordChangeSchema = z.object({
 })
 
 export type PasswordChangeFormData = z.infer<typeof passwordChangeSchema>
+
+/**
+ * Ingredient form validation schema
+ */
+export const ingredientSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Ingredient name is required')
+    .max(100, 'Ingredient name must be less than 100 characters'),
+  categoryId: z
+    .string()
+    .min(1, 'Category is required')
+    .uuid('Invalid category'),
+  defaultUnit: z.enum(['g', 'kg', 'ml', 'l', 'piece', 'pack'], {
+    errorMap: () => ({ message: 'Please select a unit' }),
+  }),
+  packageAmount: z
+    .number({ invalid_type_error: 'Package amount must be a number' })
+    .positive('Package amount must be greater than 0')
+    .max(100000, 'Package amount is too large'),
+  packageUnit: z.enum(['g', 'kg', 'ml', 'l', 'piece', 'pack'], {
+    errorMap: () => ({ message: 'Please select a package unit' }),
+  }),
+  notes: z
+    .string()
+    .max(500, 'Notes must be less than 500 characters')
+    .optional(),
+})
+
+export type IngredientFormData = z.infer<typeof ingredientSchema>
