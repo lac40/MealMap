@@ -1,0 +1,36 @@
+name: Test Self-Hosted Runner
+
+on:
+  workflow_dispatch:  # Allows manual triggering from Actions tab
+
+jobs:
+  test:
+    runs-on: self-hosted
+    
+    steps:
+    - name: Check Java
+      run: java -version
+    
+    - name: Check Node
+      run: node -v
+    
+    - name: Check npm
+      run: npm -v
+    
+    - name: Check Git
+      run: git --version
+    
+    - name: Check Gradle
+      run: gradlew -version
+    
+    - name: Check System Info
+      run: |
+        echo "✅ Runner is working!"
+        echo "Operating System:"
+        uname -a
+        echo ""
+        echo "Current Directory:"
+        pwd
+        echo ""
+        echo "Disk Space:"
+        df -h
