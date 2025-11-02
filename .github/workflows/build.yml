@@ -61,7 +61,7 @@ jobs:
       
       - name: Run Frontend Tests with Coverage
         working-directory: apps/frontend
-        run: npm test -- --run --coverage
+        run: npm run test:ci
         env:
           NODE_OPTIONS: "--max-old-space-size=1536"
       
