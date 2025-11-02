@@ -78,7 +78,17 @@ MealMap/
    cp .env.example .env
    ```
 
-2. **Edit `.env` file and set your secrets** (see DOCKER_SETUP.md for details)
+2. **Edit `.env` file and set your secrets**:
+   - Set a strong `DB_PASSWORD`
+   - Generate a secure `JWT_SECRET` using:
+     ```powershell
+     # PowerShell
+     [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(64))
+     ```
+     ```bash
+     # Linux/Mac
+     openssl rand -base64 64
+     ```
 
 3. **Start all services**:
    ```bash
