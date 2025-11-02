@@ -242,6 +242,54 @@ See individual README files in `apps/backend` and `apps/frontend` for detailed s
 - CORS configured for local development
 - Rate limiting enabled
 
+## Code Quality & Analysis
+
+### SonarQube Integration
+
+The project includes SonarQube analysis in the CI pipeline for continuous code quality monitoring.
+
+#### Setup SonarQube for CI
+
+1. **Set up SonarQube Server** (or use SonarCloud):
+   - Install SonarQube locally or use a hosted instance
+   - Create a new project in SonarQube with key: `mealmap`
+
+2. **Generate SonarQube Token**:
+   - In SonarQube: User > My Account > Security > Generate Token
+   - Copy the generated token
+
+3. **Configure GitHub Secrets**:
+   - Go to your GitHub repository > Settings > Secrets and variables > Actions
+   - Add the following secrets:
+     - `SONAR_TOKEN` - Your SonarQube authentication token
+     - `SONAR_HOST_URL` - Your SonarQube server URL (e.g., `https://sonarcloud.io` or `http://your-sonarqube-server:9000`)
+
+#### Running SonarQube Analysis Locally
+
+**Backend (Java)**:
+```bash
+cd apps/backend
+./gradlew test jacocoTestReport
+```
+
+**Frontend (TypeScript)**:
+```bash
+cd apps/frontend
+npm test -- --coverage
+```
+
+**Full SonarQube Scan** (requires SonarQube Scanner CLI):
+```bash
+sonar-scanner
+```
+
+#### Coverage Reports
+
+- **Backend**: JaCoCo generates coverage reports at `apps/backend/build/reports/jacoco/test/`
+- **Frontend**: Vitest generates coverage reports at `apps/frontend/coverage/`
+
+The CI pipeline automatically runs tests with coverage and sends results to SonarQube.
+
 ## License
 
 Proprietary

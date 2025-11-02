@@ -14,6 +14,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
+        fetch-depth: 0  # Shallow clones should be disabled for better SonarQube analysis
         clean: true
     
     - name: Set up Java 21
@@ -40,9 +41,9 @@ jobs:
       env:
         GRADLE_OPTS: "-Xmx1g -XX:MaxMetaspaceSize=512m"
     
-    - name: Run Java Tests
+    - name: Run Java Tests with Coverage
       working-directory: apps/backend
-      run: ./gradlew test --no-daemon --max-workers=2
+      run: ./gradlew test jacocoTestReport --no-daemon --max-workers=2
       env:
         SPRING_PROFILES_ACTIVE: test
         GRADLE_OPTS: "-Xmx1g -XX:MaxMetaspaceSize=512m"
@@ -57,11 +58,17 @@ jobs:
       env:
         NODE_OPTIONS: "--max-old-space-size=1536"
     
-    - name: Run Frontend Tests
+    - name: Run Frontend Tests with Coverage
       working-directory: apps/frontend
-      run: npm test -- --run
+      run: npm test -- --run --coverage
       env:
         NODE_OPTIONS: "--max-old-space-size=1536"
+    
+    - name: SonarQube Scan
+      uses: sonarsource/sonarqube-scan-action@master
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
     
     - name: Upload Test Results
       if: always()

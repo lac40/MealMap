@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.5'
     id 'io.spring.dependency-management' version '1.1.6'
+    id 'jacoco'
 }
 
 group = 'com.mealmap'
@@ -78,4 +79,31 @@ tasks.named('test') {
     
     // Ensure test classes are on the classpath
     dependsOn testClasses
+    
+    // Enable JaCoCo coverage
+    finalizedBy jacocoTestReport
+}
+
+// JaCoCo configuration
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.0 // Set to 0 initially, increase as you add more tests
+            }
+        }
+    }
 }
