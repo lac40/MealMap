@@ -1,14 +1,14 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.0'
-    id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.springframework.boot' version '3.3.5'
+    id 'io.spring.dependency-management' version '1.1.6'
 }
 
 group = 'com.mealmap'
 version = '1.0.0-SNAPSHOT'
 
 java {
-    sourceCompatibility = '17'
+    sourceCompatibility = '21'
 }
 
 configurations {
@@ -56,8 +56,26 @@ dependencies {
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('processTestResources') {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+    
+    // Try fork mode false to avoid worker process issues
+    forkEvery = 0
+    maxParallelForks = 1
+    
+    // Add JVM args
+    jvmArgs(
+        '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.util=ALL-UNNAMED'
+    )
+    
+    // Ensure test classes are on the classpath
+    dependsOn testClasses
 }

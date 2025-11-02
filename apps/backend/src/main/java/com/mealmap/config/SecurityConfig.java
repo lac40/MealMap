@@ -34,10 +34,10 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> {})
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/categories").permitAll()
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+                .requestMatchers("/auth/**", "/v1/auth/**").permitAll()
+                .requestMatchers("/categories", "/v1/categories").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/v3/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

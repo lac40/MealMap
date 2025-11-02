@@ -40,9 +40,15 @@ out/
 !**/gradle/wrapper/gradle-wrapper.jar
 *.class
 
-# Application configs
+# Application configs with secrets
 application-local.yml
 application-local.properties
+application-dev.yml
+application-dev.properties
+**/application-*.yml
+!**/application.yml
+!**/application-prod.yml
+!**/application-test.yml
 
 # ===========================
 # IDEs and Editors
@@ -67,6 +73,8 @@ bin/
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+*.md
+!README.md
 
 # NetBeans
 nbproject/private/
@@ -115,9 +123,32 @@ lerna-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*.local
+
+# SSL/TLS Certificates
 *.pem
 *.key
+*.crt
+*.cert
+*.p12
+*.pfx
+
+# Secrets directories
 secrets/
+.secrets/
+
+# Docker secrets
+docker-compose.override.yml
+docker-compose.*.yml
+!docker-compose.yml
+
+# Database credentials
+*.sql.backup
+*.bak
+
+# JWT tokens and keys
+jwt.secret
+*.jwt
 
 # ===========================
 # Codegen outputs
@@ -127,6 +158,17 @@ apps/frontend/src/api/generated/
 tools/codegen/**/out/
 
 # ===========================
+# Docker
+# ===========================
+# Docker volumes and data
+docker-volumes/
+data/
+volumes/
+
+# Docker build cache
+.dockerignore.backup
+
+# ===========================
 # Miscellaneous
 # ===========================
 *.swp
@@ -134,3 +176,8 @@ tools/codegen/**/out/
 *.tmp
 *.temp
 .cache/
+
+# Backup files
+*.backup
+*.bkp
+*~
