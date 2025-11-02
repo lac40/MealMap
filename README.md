@@ -250,19 +250,80 @@ The project includes SonarQube analysis in the CI pipeline for continuous code q
 
 #### Setup SonarQube for CI
 
-1. **Set up SonarQube Server** (or use SonarCloud):
-   - Install SonarQube locally or use a hosted instance
-   - Create a new project in SonarQube with key: `mealmap`
+**Option 1: Using SonarCloud (Recommended for GitHub projects)**
 
-2. **Generate SonarQube Token**:
-   - In SonarQube: User > My Account > Security > Generate Token
-   - Copy the generated token
+1. **Sign up for SonarCloud**:
+   - Go to [https://sonarcloud.io](https://sonarcloud.io)
+   - Click "Log in" and select "With GitHub"
+   - Authorize SonarCloud to access your GitHub account
 
-3. **Configure GitHub Secrets**:
+2. **Import Your Project**:
+   - Click the "+" icon in the top right > "Analyze new project"
+   - Select your organization (or create one)
+   - Choose the `MealMap` repository from the list
+   - Click "Set Up"
+
+3. **Get Your Configuration**:
+   - During setup, SonarCloud will display your project key (e.g., `lac40_MealMap`)
+   - **SONAR_HOST_URL**: `https://sonarcloud.io`
+   - Go to "Administration" > "Analysis Method" > Select "With GitHub Actions"
+   - SonarCloud will show you the `SONAR_TOKEN` - copy it
+
+4. **Configure GitHub Secrets**:
    - Go to your GitHub repository > Settings > Secrets and variables > Actions
-   - Add the following secrets:
-     - `SONAR_TOKEN` - Your SonarQube authentication token
-     - `SONAR_HOST_URL` - Your SonarQube server URL (e.g., `https://sonarcloud.io` or `http://your-sonarqube-server:9000`)
+   - Click "New repository secret" and add:
+     - Name: `SONAR_TOKEN`, Value: (paste the token from SonarCloud)
+     - Name: `SONAR_HOST_URL`, Value: `https://sonarcloud.io`
+
+**Option 2: Self-Hosted SonarQube Server**
+
+1. **Install SonarQube** (requires Docker):
+   ```bash
+   docker run -d --name sonarqube \
+     -p 9000:9000 \
+     -v sonarqube_data:/opt/sonarqube/data \
+     -v sonarqube_logs:/opt/sonarqube/logs \
+     -v sonarqube_extensions:/opt/sonarqube/extensions \
+     sonarqube:lts-community
+   ```
+
+2. **Initial Setup**:
+   - Open `http://localhost:9000` in your browser
+   - Default credentials: admin/admin (you'll be prompted to change this)
+   - Change the password when prompted
+
+3. **Create a Project**:
+   - Click "Create Project" > "Manually"
+   - Project key: `mealmap`
+   - Display name: `MealMap`
+   - Click "Set Up"
+
+4. **Generate Token**:
+   - Select "With GitHub Actions" as the analysis method
+   - Or go to: User Icon (top right) > My Account > Security
+   - Under "Generate Tokens":
+     - Name: `github-actions`
+     - Type: "Global Analysis Token" or "Project Analysis Token"
+     - Expires: Set expiration (or "No expiration")
+     - Click "Generate"
+   - **Copy the token immediately** (you won't see it again!)
+
+5. **Get Your Host URL**:
+   - If running locally: `http://localhost:9000`
+   - If on a server: `http://your-server-ip:9000` or `https://your-domain.com`
+   - **Important**: Make sure your self-hosted GitHub runner can access this URL!
+
+6. **Configure GitHub Secrets**:
+   - Go to your GitHub repository > Settings > Secrets and variables > Actions
+   - Click "New repository secret" and add:
+     - Name: `SONAR_TOKEN`, Value: (paste the token you generated)
+     - Name: `SONAR_HOST_URL`, Value: (your SonarQube server URL)
+
+**Verifying Setup**:
+- Once configured, push to your `main` branch
+- GitHub Actions will run the CI pipeline with SonarQube analysis
+- Check the "Actions" tab in GitHub to see the results
+- View detailed analysis in SonarCloud/SonarQube dashboard
 
 #### Running SonarQube Analysis Locally
 

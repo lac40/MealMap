@@ -64,11 +64,51 @@ jobs:
       env:
         NODE_OPTIONS: "--max-old-space-size=1536"
     
-    - name: SonarQube Scan
-      uses: sonarsource/sonarqube-scan-action@master
+    - name: Cache SonarQube packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+    
+    - name: Install SonarQube Scanner
+      run: |
+        # Check if sonar-scanner is already installed
+        if ! command -v sonar-scanner &> /dev/null; then
+          echo "Installing SonarQube Scanner..."
+          mkdir -p ~/.sonar
+          cd ~/.sonar
+          
+          # Download and install SonarQube Scanner CLI
+          wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+          unzip -q sonar-scanner-cli-5.0.1.3006-linux.zip
+          rm sonar-scanner-cli-5.0.1.3006-linux.zip
+          
+          # Add to PATH for this job
+          echo "$HOME/.sonar/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
+        else
+          echo "SonarQube Scanner already installed"
+        fi
+    
+    - name: Run SonarQube Analysis
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Ensure sonar-scanner is in PATH
+        export PATH="$HOME/.sonar/sonar-scanner-5.0.1.3006-linux/bin:$PATH"
+        
+        # Run SonarQube analysis
+        sonar-scanner \
+          -Dsonar.projectKey=mealmap \
+          -Dsonar.sources=apps/backend/src/main,apps/frontend/src \
+          -Dsonar.tests=apps/backend/src/test,apps/frontend/src \
+          -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+          -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
+          -Dsonar.java.binaries=apps/backend/build/classes \
+          -Dsonar.coverage.jacoco.xmlReportPaths=apps/backend/build/reports/jacoco/test/jacocoTestReport.xml \
+          -Dsonar.javascript.lcov.reportPaths=apps/frontend/coverage/lcov.info
     
     - name: Upload Test Results
       if: always()
