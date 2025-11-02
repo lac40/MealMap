@@ -13,11 +13,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: 17
-          distribution: 'zulu' # Alternative distribution options are available
+          java-version: 21
+          distribution: 'temurin' 
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:
@@ -30,7 +30,54 @@ jobs:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
-      - name: Build and analyze
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'apps/frontend/package-lock.json'
+      
+      - name: Make Gradle wrapper executable
+        working-directory: apps/backend
+        run: chmod +x gradlew
+      
+      - name: Build Backend
+        working-directory: apps/backend
+        run: ./gradlew build -x test --no-daemon
+        env:
+          GRADLE_OPTS: "-Xmx1g -XX:MaxMetaspaceSize=512m"
+      
+      - name: Run Backend Tests with Coverage
+        working-directory: apps/backend
+        run: ./gradlew test jacocoTestReport --no-daemon
+        env:
+          SPRING_PROFILES_ACTIVE: test
+          GRADLE_OPTS: "-Xmx1g -XX:MaxMetaspaceSize=512m"
+      
+      - name: Install Frontend Dependencies
+        working-directory: apps/frontend
+        run: npm ci --prefer-offline
+      
+      - name: Run Frontend Tests with Coverage
+        working-directory: apps/frontend
+        run: npm test -- --run --coverage
+        env:
+          NODE_OPTIONS: "--max-old-space-size=1536"
+      
+      - name: SonarQube Analysis
+        working-directory: apps/backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew build sonar --info
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./gradlew sonar --info \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.javascript.lcov.reportPaths=../frontend/coverage/lcov.info \
+            -Dsonar.sources=src/main,../frontend/src \
+            -Dsonar.tests=src/test,../frontend/src \
+            -Dsonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/src/test/** \
+            -Dsonar.exclusions=**/node_modules/**,**/build/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.test.tsx,**/*.spec.ts \
+            --no-daemon
