@@ -10,7 +10,7 @@ MealMap helps users plan their weekly meals, manage ingredients, create recipes,
 
 This project follows a monorepo structure with separate frontend and backend applications:
 
-```
+```basha
 MealMap/
 ├── api/                    # OpenAPI specification (contract-first)
 │   └── openapi.v1.json    # API contract
@@ -23,24 +23,24 @@ MealMap/
 ## Features
 
 ### Core Features
-- ✅ **User Authentication** - JWT-based secure authentication
-- ✅ **Ingredient Management** - Create and manage user-scoped ingredients
-- ✅ **Recipe Management** - Build recipes with ingredients and external links
-- ✅ **Weekly Meal Planner** - Plan meals across configurable time slots
-- ✅ **Pantry Tracking** - Track what you have at home
-- ✅ **Smart Grocery Lists** - Auto-generate shopping lists from meal plans
-- ✅ **Multi-trip Planning** - Split grocery shopping across multiple trips
-- ✅ **Household Collaboration** - Share plans with household members
-- ✅ **Export** - Export grocery lists as CSV/PDF
+- **User Authentication** - JWT-based secure authentication
+- **Ingredient Management** - Create and manage user-scoped ingredients
+- **Recipe Management** - Build recipes with ingredients and external links
+- **Weekly Meal Planner** - Plan meals across configurable time slots
+- **Pantry Tracking** - Track what you have at home
+- **Smart Grocery Lists** - Auto-generate shopping lists from meal plans
+- **Multi-trip Planning** - Split grocery shopping across multiple trips
+- **Household Collaboration** - Share plans with household members
+- **Export** - Export grocery lists as CSV/PDF
 
 ### Optional Features (Future)
-- 🔄 Nutrition hints
-- 🔄 Recipe import from URLs
-- 🔄 Meal plan optimizer
-- 🔄 Unit conversion & normalization
-- 🔄 Ingredient substitutions
-- 🔄 Barcode lookup
-- 🔄 Receipt OCR
+- Nutrition hints
+- Recipe import from URLs
+- Meal plan optimizer
+- Unit conversion & normalization
+- Ingredient substitutions
+- Barcode lookup
+- Receipt OCR
 
 ## Tech Stack
 
@@ -73,26 +73,42 @@ MealMap/
 
 #### Option 1: Using Docker Compose (Recommended)
 
-1. **Start MS SQL Server with database initialization**:
+1. **Copy environment template**:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Edit `.env` file and set your secrets** (see DOCKER_SETUP.md for details)
+
+3. **Start all services**:
    ```bash
    docker-compose up -d
    ```
 
-   This will start MS SQL Server and automatically create the `mealmap` database.
+   This will start MS SQL Server, backend, and frontend with automatic database initialization.
 
 #### Option 2: Manual Docker Setup
 
-1. **Start MS SQL Server**:
+1. **Set your password as an environment variable**:
    ```bash
-   docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
+   # PowerShell
+   $env:DB_PASSWORD="YourStrongPasswordHere"
+   
+   # Linux/Mac
+   export DB_PASSWORD="YourStrongPasswordHere"
+   ```
+
+2. **Start MS SQL Server**:
+   ```bash
+   docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$DB_PASSWORD" \
      -p 1433:1433 --name mealmap-sqlserver \
      -d mcr.microsoft.com/mssql/server:2022-latest
    ```
 
-2. **Create database**:
+3. **Create database**:
    ```bash
-   docker exec -it mealmap-sqlserver /opt/mssql-tools/bin/sqlcmd \
-     -S localhost -U SA -P 'YourStrong@Passw0rd' \
+   docker exec -it mealmap-sqlserver /opt/mssql-tools18/bin/sqlcmd \
+     -S localhost -U SA -P "$DB_PASSWORD" -C \
      -Q 'CREATE DATABASE mealmap'
    ```
 
@@ -149,16 +165,26 @@ npm run dev
 
 ### Environment Variables
 
-#### Backend
-- `JWT_SECRET` - Secret for JWT signing
-- `DB_HOST` - MS SQL Server host (default: localhost)
+Create a `.env` file from `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+#### Required Variables
+- `DB_HOST` - MS SQL Server host (default: mssql)
 - `DB_PORT` - MS SQL Server port (default: 1433)
 - `DB_NAME` - Database name (default: mealmap)
-- `DB_USER` - Database username (default: sa)
-- `DB_PASSWORD` - Database password
+- `DB_USER` - Database username (set in .env)
+- `DB_PASSWORD` - Database password (set in .env)
+- `JWT_SECRET` - JWT signing key, must be base64-encoded (generate with: `[Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(64))`)
+- `SPRING_PROFILES_ACTIVE` - Spring profile (default: prod)
+- `VITE_API_BASE_URL` - Frontend API URL (default: http://localhost:8080/v1)
+
+**Security Note**: Never commit your `.env` file! It's in `.gitignore` for a reason.
 
 #### Frontend
-The frontend automatically proxies API requests to `http://localhost:8080` during development.
+The frontend automatically proxies API requests to the backend during development.
 
 ## API Documentation
 
@@ -179,18 +205,18 @@ Key endpoint groups:
 ### Development & Production
 Both environments use **MS SQL Server**.
 
-For local development with Docker:
+For local development, use Docker Compose (recommended):
 ```bash
-# Start MS SQL Server container
-docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
-  -p 1433:1433 --name mealmap-sqlserver \
-  -d mcr.microsoft.com/mssql/server:2022-latest
+# Copy environment template and set your password
+cp .env.example .env
 
-# Create database
-docker exec -it mealmap-sqlserver /opt/mssql-tools/bin/sqlcmd \
-  -S localhost -U SA -P 'YourStrong@Passw0rd' \
-  -Q 'CREATE DATABASE mealmap'
+# Edit .env to set DB_PASSWORD and other secrets
+
+# Start all services (includes database)
+docker-compose up -d
 ```
+
+For manual setup, see **Backend Setup > Option 2** above.
 
 ### Migrations
 Flyway handles database migrations automatically. Migrations are in `apps/backend/src/main/resources/db/migration/`.
