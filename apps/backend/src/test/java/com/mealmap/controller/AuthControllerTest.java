@@ -26,7 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(
     controllers = AuthController.class,
     excludeAutoConfiguration = {
-        org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
+        org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class
     }
 )
 @DisplayName("AuthController Integration Tests")
@@ -40,6 +41,12 @@ class AuthControllerTest {
 
     @MockBean
     private AuthService authService;
+    
+    @MockBean
+    private com.mealmap.security.JwtService jwtService;
+    
+    @MockBean
+    private com.mealmap.service.CustomUserDetailsService userDetailsService;
 
     private RegisterRequest registerRequest;
     private LoginRequest loginRequest;

@@ -28,7 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(
     controllers = IngredientController.class,
     excludeAutoConfiguration = {
-        org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class
+        org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class
     }
 )
 @DisplayName("IngredientController Integration Tests")
@@ -42,6 +43,12 @@ class IngredientControllerTest {
 
     @MockBean
     private IngredientService ingredientService;
+    
+    @MockBean
+    private com.mealmap.security.JwtService jwtService;
+    
+    @MockBean
+    private com.mealmap.service.CustomUserDetailsService userDetailsService;
 
     private IngredientDto ingredientDto;
     private CreateIngredientRequest createRequest;

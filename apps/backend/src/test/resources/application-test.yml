@@ -3,4 +3,10 @@ spring:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+
+# JWT configuration for tests
+jwt:
+  secret: dGVzdC1qd3Qtc2VjcmV0LWZvci10ZXN0aW5nLW9ubHktZG8tbm90LXVzZS1pbi1wcm9kdWN0aW9uLWJhc2U2NC1lbmNvZGVk
+  expiration: 900000
+  refresh-expiration: 604800000
