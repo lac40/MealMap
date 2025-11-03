@@ -4,7 +4,7 @@ import com.mealmap.model.dto.grocery.GroceryItemDto;
 import com.mealmap.model.dto.grocery.GroceryListDto;
 import com.mealmap.model.dto.grocery.GroceryTripDto;
 import com.mealmap.model.embedded.GroceryItem;
-import com.mealmap.model.embedded.GroceryTrip;
+import com.mealmap.model.entity.GroceryTrip;
 import com.mealmap.model.entity.GroceryList;
 import com.mealmap.repository.IngredientRepository;
 import lombok.RequiredArgsConstructor;

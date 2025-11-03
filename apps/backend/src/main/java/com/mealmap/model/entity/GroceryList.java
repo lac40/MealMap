@@ -1,6 +1,5 @@
 package com.mealmap.model.entity;
 
-import com.mealmap.model.embedded.GroceryTrip;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,12 +36,8 @@ public class GroceryList {
     @JoinColumn(name = "household_id")
     private Household household;
     
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-        name = "grocery_list_trips",
-        joinColumns = @JoinColumn(name = "grocery_list_id")
-    )
-    @OrderColumn(name = "trip_order")
+    @OneToMany(mappedBy = "groceryList", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("tripIndex ASC")
     @Builder.Default
     private List<GroceryTrip> trips = new ArrayList<>();
     

@@ -102,9 +102,7 @@ class DashboardServiceTest {
                 eq(userId), any(LocalDate.class), any(LocalDate.class)
         );
 
-        // Verify household methods were not called
-        verify(ingredientRepository, never()).countByOwnerUserIdOrOwnerUserHouseholdId(any(), any());
-        verify(recipeRepository, never()).countByOwnerUserIdOrOwnerUserHouseholdId(any(), any());
+        // Verify household-specific pantry methods were not called
         verify(pantryItemRepository, never()).countByUserOrHouseholds(any(), anyList());
     }
 
@@ -120,8 +118,8 @@ class DashboardServiceTest {
 
         List<UUID> householdIds = Collections.singletonList(householdId);
 
-        when(ingredientRepository.countByOwnerUserIdOrOwnerUserHouseholdId(userId, householdId)).thenReturn(20L);
-        when(recipeRepository.countByOwnerUserIdOrOwnerUserHouseholdId(userId, householdId)).thenReturn(25L);
+        when(ingredientRepository.countByOwnerUserId(userId)).thenReturn(20L);
+        when(recipeRepository.countByOwnerUserId(userId)).thenReturn(25L);
         when(pantryItemRepository.countByUserOrHouseholds(userId, householdIds)).thenReturn(30L);
         when(plannerWeekRepository.countPlannerItemsByUserOrHouseholdsAndDateRange(
                 eq(userId), eq(householdIds), any(LocalDate.class), any(LocalDate.class)
@@ -138,16 +136,12 @@ class DashboardServiceTest {
         assertThat(stats.getPlannedMealsCount()).isEqualTo(18L);
         assertThat(stats.getUpcomingMealsCount()).isEqualTo(22L);
 
-        verify(ingredientRepository).countByOwnerUserIdOrOwnerUserHouseholdId(userId, householdId);
-        verify(recipeRepository).countByOwnerUserIdOrOwnerUserHouseholdId(userId, householdId);
+        verify(ingredientRepository).countByOwnerUserId(userId);
+        verify(recipeRepository).countByOwnerUserId(userId);
         verify(pantryItemRepository).countByUserOrHouseholds(userId, householdIds);
         verify(plannerWeekRepository, times(2)).countPlannerItemsByUserOrHouseholdsAndDateRange(
                 eq(userId), eq(householdIds), any(LocalDate.class), any(LocalDate.class)
         );
-
-        // Verify single-user methods were not called
-        verify(ingredientRepository, never()).countByOwnerUserId(any());
-        verify(recipeRepository, never()).countByOwnerUserId(any());
         verify(pantryItemRepository, never()).countByUserId(any());
     }
 

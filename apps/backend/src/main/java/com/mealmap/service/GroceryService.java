@@ -7,7 +7,7 @@ import com.mealmap.model.dto.grocery.ComputeGroceryRequest;
 import com.mealmap.model.dto.grocery.GroceryListDto;
 import com.mealmap.model.dto.grocery.UpdateGroceryListRequest;
 import com.mealmap.model.embedded.GroceryItem;
-import com.mealmap.model.embedded.GroceryTrip;
+import com.mealmap.model.entity.GroceryTrip;
 import com.mealmap.model.embedded.Quantity;
 import com.mealmap.model.entity.*;
 import com.mealmap.repository.*;

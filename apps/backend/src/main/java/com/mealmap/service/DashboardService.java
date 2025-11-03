@@ -29,21 +29,11 @@ public class DashboardService {
         UUID householdId = currentUser.getHousehold() != null ? currentUser.getHousehold().getId() : null;
         List<UUID> householdIds = householdId != null ? Collections.singletonList(householdId) : Collections.emptyList();
 
-        // Count ingredients (user + household)
-        long ingredientsCount;
-        if (householdId != null) {
-            ingredientsCount = ingredientRepository.countByOwnerUserIdOrOwnerUserHouseholdId(currentUser.getId(), householdId);
-        } else {
-            ingredientsCount = ingredientRepository.countByOwnerUserId(currentUser.getId());
-        }
+        // Count ingredients (user only for now)
+        long ingredientsCount = ingredientRepository.countByOwnerUserId(currentUser.getId());
 
-        // Count recipes (user + household)
-        long recipesCount;
-        if (householdId != null) {
-            recipesCount = recipeRepository.countByOwnerUserIdOrOwnerUserHouseholdId(currentUser.getId(), householdId);
-        } else {
-            recipesCount = recipeRepository.countByOwnerUserId(currentUser.getId());
-        }
+        // Count recipes (user only for now)
+        long recipesCount = recipeRepository.countByOwnerUserId(currentUser.getId());
 
         // Count pantry items (user + household)
         long pantryItemsCount;
