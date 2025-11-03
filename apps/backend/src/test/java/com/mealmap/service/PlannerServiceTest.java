@@ -24,6 +24,7 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PlannerService Tests")
@@ -95,11 +96,11 @@ class PlannerServiceTest {
                 .plannerWeek(testPlannerWeek)
                 .build();
 
-        // Mock security context
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn("test@example.com");
+        // Mock security context - using lenient() since not all tests need these
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(authentication.getName()).thenReturn("test@example.com");
         SecurityContextHolder.setContext(securityContext);
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+        lenient().when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
     }
 
     @Test

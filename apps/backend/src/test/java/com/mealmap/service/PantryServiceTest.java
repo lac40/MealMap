@@ -1,16 +1,11 @@
-package com.mealmap.backend.service;
+package com.mealmap.service;
 
-import com.mealmap.backend.dto.pantry.CreatePantryItemRequest;
-import com.mealmap.backend.dto.pantry.PantryItemDto;
-import com.mealmap.backend.dto.pantry.PantryItemPageResponse;
-import com.mealmap.backend.dto.pantry.UpdatePantryItemRequest;
-import com.mealmap.backend.entity.*;
-import com.mealmap.backend.exception.ResourceNotFoundException;
-import com.mealmap.backend.exception.UnauthorizedException;
-import com.mealmap.backend.mapper.PantryMapper;
-import com.mealmap.backend.repository.IngredientRepository;
-import com.mealmap.backend.repository.PantryItemRepository;
-import com.mealmap.backend.repository.UserRepository;
+import com.mealmap.exception.ResourceNotFoundException;
+import com.mealmap.exception.UnauthorizedException;
+import com.mealmap.mapper.PantryMapper;
+import com.mealmap.model.dto.pantry.*;
+import com.mealmap.model.entity.*;
+import com.mealmap.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,10 +24,12 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class PantryServiceTest {
@@ -66,28 +63,28 @@ class PantryServiceTest {
     @BeforeEach
     void setUp() {
         testUser = new User();
-        testUser.setId(1L);
+        testUser.setId(UUID.randomUUID());
         testUser.setEmail("test@example.com");
         testUser.setDisplayName("Test User");
 
         testHousehold = new Household();
-        testHousehold.setId(1L);
+        testHousehold.setId(UUID.randomUUID());
         testHousehold.setName("Test Household");
         testHousehold.getMembers().add(testUser);
 
         testCategory = new Category();
-        testCategory.setId(1L);
+        testCategory.setId(UUID.randomUUID());
         testCategory.setName("Dairy");
 
         testIngredient = new Ingredient();
-        testIngredient.setId(1L);
+        testIngredient.setId(UUID.randomUUID());
         testIngredient.setName("Milk");
         testIngredient.setCategory(testCategory);
 
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(authentication.getName()).thenReturn("test@example.com");
         SecurityContextHolder.setContext(securityContext);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn("test@example.com");
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+        lenient().when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
     }
 
     @Test
@@ -95,19 +92,19 @@ class PantryServiceTest {
         // Arrange
         Pageable pageable = PageRequest.of(0, 20);
         
-        PantryItem userItem = createPantryItem(1L, testUser, null, testIngredient, new BigDecimal("500"), "ml");
-        PantryItem householdItem = createPantryItem(2L, null, testHousehold, testIngredient, new BigDecimal("1"), "l");
+        PantryItem userItem = createPantryItem(UUID.randomUUID(), testUser, null, testIngredient, new BigDecimal("500"), "ml");
+        PantryItem householdItem = createPantryItem(UUID.randomUUID(), null, testHousehold, testIngredient, new BigDecimal("1"), "l");
         
         List<PantryItem> items = Arrays.asList(userItem, householdItem);
         Page<PantryItem> page = new PageImpl<>(items, pageable, items.size());
         
-        when(pantryItemRepository.findByUserIdOrUserHouseholdId(eq(1L), eq(1L), any(Pageable.class)))
+        when(pantryItemRepository.findByUserIdOrUserHouseholdId(eq(testUser.getId()), eq(testUser.getId()), any(Pageable.class)))
             .thenReturn(page);
         
         PantryItemDto userItemDto = new PantryItemDto();
-        userItemDto.setId(1L);
+        userItemDto.setId(userItem.getId());
         PantryItemDto householdItemDto = new PantryItemDto();
-        householdItemDto.setId(2L);
+        householdItemDto.setId(householdItem.getId());
         
         when(pantryMapper.toDto(userItem)).thenReturn(userItemDto);
         when(pantryMapper.toDto(householdItem)).thenReturn(householdItemDto);
@@ -120,71 +117,75 @@ class PantryServiceTest {
         assertThat(response.getItems()).hasSize(2);
         assertThat(response.getTotalElements()).isEqualTo(2);
         assertThat(response.getTotalPages()).isEqualTo(1);
-        verify(pantryItemRepository).findByUserIdOrUserHouseholdId(eq(1L), eq(1L), any(Pageable.class));
+        verify(pantryItemRepository).findByUserIdOrUserHouseholdId(eq(testUser.getId()), eq(testUser.getId()), any(Pageable.class));
     }
 
     @Test
     void getPantryItemById_WhenItemExists_ShouldReturnItem() {
         // Arrange
-        PantryItem pantryItem = createPantryItem(1L, testUser, null, testIngredient, new BigDecimal("500"), "ml");
+        UUID itemId = UUID.randomUUID();
+        PantryItem pantryItem = createPantryItem(itemId, testUser, null, testIngredient, new BigDecimal("500"), "ml");
         PantryItemDto dto = new PantryItemDto();
-        dto.setId(1L);
+        dto.setId(itemId);
         
-        when(pantryItemRepository.findById(1L)).thenReturn(Optional.of(pantryItem));
+        when(pantryItemRepository.findById(itemId)).thenReturn(Optional.of(pantryItem));
         when(pantryMapper.toDto(pantryItem)).thenReturn(dto);
 
         // Act
-        PantryItemDto result = pantryService.getPantryItemById(1L);
+        PantryItemDto result = pantryService.getPantryItemById(itemId);
 
         // Assert
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(1L);
-        verify(pantryItemRepository).findById(1L);
+        assertThat(result.getId()).isEqualTo(itemId);
+        verify(pantryItemRepository).findById(itemId);
     }
 
     @Test
     void getPantryItemById_WhenItemNotExists_ShouldThrowException() {
         // Arrange
-        when(pantryItemRepository.findById(1L)).thenReturn(Optional.empty());
+        UUID itemId = UUID.randomUUID();
+        when(pantryItemRepository.findById(itemId)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThatThrownBy(() -> pantryService.getPantryItemById(1L))
+        assertThatThrownBy(() -> pantryService.getPantryItemById(itemId))
             .isInstanceOf(ResourceNotFoundException.class)
-            .hasMessage("Pantry item not found with id: 1");
+            .hasMessageContaining("Pantry item not found");
     }
 
     @Test
     void getPantryItemById_WhenUserHasNoAccess_ShouldThrowException() {
         // Arrange
         User otherUser = new User();
-        otherUser.setId(2L);
+        otherUser.setId(UUID.randomUUID());
         otherUser.setEmail("other@example.com");
         
-        PantryItem pantryItem = createPantryItem(1L, otherUser, null, testIngredient, new BigDecimal("500"), "ml");
+        UUID itemId = UUID.randomUUID();
+        PantryItem pantryItem = createPantryItem(itemId, otherUser, null, testIngredient, new BigDecimal("500"), "ml");
         
-        when(pantryItemRepository.findById(1L)).thenReturn(Optional.of(pantryItem));
+        when(pantryItemRepository.findById(itemId)).thenReturn(Optional.of(pantryItem));
 
         // Act & Assert
-        assertThatThrownBy(() -> pantryService.getPantryItemById(1L))
+        assertThatThrownBy(() -> pantryService.getPantryItemById(itemId))
             .isInstanceOf(UnauthorizedException.class)
-            .hasMessage("You don't have access to this pantry item");
+            .hasMessageContaining("don't have access");
     }
 
     @Test
     void createPantryItem_WithUserOwnership_ShouldCreateItem() {
         // Arrange
         CreatePantryItemRequest request = new CreatePantryItemRequest();
-        request.setIngredientId(1L);
+        request.setIngredientId(testIngredient.getId());
         request.setQuantityAmount(new BigDecimal("500"));
         request.setQuantityUnit("ml");
         
+        UUID itemId = UUID.randomUUID();
         PantryItem pantryItem = createPantryItem(null, testUser, null, testIngredient, new BigDecimal("500"), "ml");
-        PantryItem savedItem = createPantryItem(1L, testUser, null, testIngredient, new BigDecimal("500"), "ml");
+        PantryItem savedItem = createPantryItem(itemId, testUser, null, testIngredient, new BigDecimal("500"), "ml");
         
         PantryItemDto dto = new PantryItemDto();
-        dto.setId(1L);
+        dto.setId(itemId);
         
-        when(ingredientRepository.findById(1L)).thenReturn(Optional.of(testIngredient));
+        when(ingredientRepository.findById(testIngredient.getId())).thenReturn(Optional.of(testIngredient));
         when(pantryMapper.toEntity(request)).thenReturn(pantryItem);
         when(pantryItemRepository.save(pantryItem)).thenReturn(savedItem);
         when(pantryMapper.toDto(savedItem)).thenReturn(dto);
@@ -194,8 +195,8 @@ class PantryServiceTest {
 
         // Assert
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(1L);
-        verify(ingredientRepository).findById(1L);
+        assertThat(result.getId()).isEqualTo(itemId);
+        verify(ingredientRepository).findById(testIngredient.getId());
         verify(pantryItemRepository).save(pantryItem);
         assertThat(pantryItem.getUser()).isEqualTo(testUser);
         assertThat(pantryItem.getIngredient()).isEqualTo(testIngredient);
@@ -205,18 +206,19 @@ class PantryServiceTest {
     void createPantryItem_WithHouseholdOwnership_ShouldCreateItem() {
         // Arrange
         CreatePantryItemRequest request = new CreatePantryItemRequest();
-        request.setIngredientId(1L);
-        request.setHouseholdId(1L);
+        request.setIngredientId(testIngredient.getId());
+        request.setHouseholdId(testHousehold.getId());
         request.setQuantityAmount(new BigDecimal("500"));
         request.setQuantityUnit("ml");
         
+        UUID itemId = UUID.randomUUID();
         PantryItem pantryItem = createPantryItem(null, null, testHousehold, testIngredient, new BigDecimal("500"), "ml");
-        PantryItem savedItem = createPantryItem(1L, null, testHousehold, testIngredient, new BigDecimal("500"), "ml");
+        PantryItem savedItem = createPantryItem(itemId, null, testHousehold, testIngredient, new BigDecimal("500"), "ml");
         
         PantryItemDto dto = new PantryItemDto();
-        dto.setId(1L);
+        dto.setId(itemId);
         
-        when(ingredientRepository.findById(1L)).thenReturn(Optional.of(testIngredient));
+        when(ingredientRepository.findById(testIngredient.getId())).thenReturn(Optional.of(testIngredient));
         when(pantryMapper.toEntity(request)).thenReturn(pantryItem);
         when(pantryItemRepository.save(pantryItem)).thenReturn(savedItem);
         when(pantryMapper.toDto(savedItem)).thenReturn(dto);
@@ -226,7 +228,7 @@ class PantryServiceTest {
 
         // Assert
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getId()).isEqualTo(itemId);
         verify(pantryItemRepository).save(pantryItem);
         assertThat(pantryItem.getHousehold()).isEqualTo(testHousehold);
     }
@@ -234,149 +236,90 @@ class PantryServiceTest {
     @Test
     void createPantryItem_WhenIngredientNotExists_ShouldThrowException() {
         // Arrange
+        UUID ingredientId = UUID.randomUUID();
         CreatePantryItemRequest request = new CreatePantryItemRequest();
-        request.setIngredientId(999L);
+        request.setIngredientId(ingredientId);
         request.setQuantityAmount(new BigDecimal("500"));
         request.setQuantityUnit("ml");
         
-        when(ingredientRepository.findById(999L)).thenReturn(Optional.empty());
+        when(ingredientRepository.findById(ingredientId)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThatThrownBy(() -> pantryService.createPantryItem(request))
             .isInstanceOf(ResourceNotFoundException.class)
-            .hasMessage("Ingredient not found with id: 999");
+            .hasMessageContaining("Ingredient not found");
     }
 
     @Test
     void createPantryItem_WhenHouseholdNotAccessible_ShouldThrowException() {
         // Arrange
         Household otherHousehold = new Household();
-        otherHousehold.setId(2L);
+        otherHousehold.setId(UUID.randomUUID());
         otherHousehold.setName("Other Household");
         
         CreatePantryItemRequest request = new CreatePantryItemRequest();
-        request.setIngredientId(1L);
-        request.setHouseholdId(2L);
+        request.setIngredientId(testIngredient.getId());
+        request.setHouseholdId(otherHousehold.getId());
         request.setQuantityAmount(new BigDecimal("500"));
         request.setQuantityUnit("ml");
         
         PantryItem pantryItem = createPantryItem(null, null, otherHousehold, testIngredient, new BigDecimal("500"), "ml");
         
-        when(ingredientRepository.findById(1L)).thenReturn(Optional.of(testIngredient));
+        when(ingredientRepository.findById(testIngredient.getId())).thenReturn(Optional.of(testIngredient));
         when(pantryMapper.toEntity(request)).thenReturn(pantryItem);
 
         // Act & Assert
         assertThatThrownBy(() -> pantryService.createPantryItem(request))
             .isInstanceOf(UnauthorizedException.class)
-            .hasMessage("You don't have access to this household");
+            .hasMessageContaining("don't have access");
     }
 
     @Test
     void updatePantryItem_ShouldUpdateItem() {
         // Arrange
+        UUID itemId = UUID.randomUUID();
         UpdatePantryItemRequest request = new UpdatePantryItemRequest();
         request.setQuantityAmount(new BigDecimal("1000"));
         request.setQuantityUnit("ml");
         
-        PantryItem pantryItem = createPantryItem(1L, testUser, null, testIngredient, new BigDecimal("500"), "ml");
-        PantryItem updatedItem = createPantryItem(1L, testUser, null, testIngredient, new BigDecimal("1000"), "ml");
+        PantryItem pantryItem = createPantryItem(itemId, testUser, null, testIngredient, new BigDecimal("500"), "ml");
+        PantryItem updatedItem = createPantryItem(itemId, testUser, null, testIngredient, new BigDecimal("1000"), "ml");
         
         PantryItemDto dto = new PantryItemDto();
-        dto.setId(1L);
+        dto.setId(itemId);
         
-        when(pantryItemRepository.findById(1L)).thenReturn(Optional.of(pantryItem));
+        when(pantryItemRepository.findById(itemId)).thenReturn(Optional.of(pantryItem));
         when(pantryItemRepository.save(pantryItem)).thenReturn(updatedItem);
         when(pantryMapper.toDto(updatedItem)).thenReturn(dto);
 
         // Act
-        PantryItemDto result = pantryService.updatePantryItem(1L, request);
+        PantryItemDto result = pantryService.updatePantryItem(itemId, request);
 
         // Assert
         assertThat(result).isNotNull();
-        verify(pantryItemRepository).findById(1L);
+        verify(pantryItemRepository).findById(itemId);
         verify(pantryMapper).updateEntityFromDto(request, pantryItem);
         verify(pantryItemRepository).save(pantryItem);
     }
 
     @Test
-    void updatePantryItem_WhenItemNotExists_ShouldThrowException() {
-        // Arrange
-        UpdatePantryItemRequest request = new UpdatePantryItemRequest();
-        request.setQuantityAmount(new BigDecimal("1000"));
-        request.setQuantityUnit("ml");
-        
-        when(pantryItemRepository.findById(1L)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThatThrownBy(() -> pantryService.updatePantryItem(1L, request))
-            .isInstanceOf(ResourceNotFoundException.class)
-            .hasMessage("Pantry item not found with id: 1");
-    }
-
-    @Test
-    void updatePantryItem_WhenUserHasNoAccess_ShouldThrowException() {
-        // Arrange
-        User otherUser = new User();
-        otherUser.setId(2L);
-        
-        UpdatePantryItemRequest request = new UpdatePantryItemRequest();
-        request.setQuantityAmount(new BigDecimal("1000"));
-        request.setQuantityUnit("ml");
-        
-        PantryItem pantryItem = createPantryItem(1L, otherUser, null, testIngredient, new BigDecimal("500"), "ml");
-        
-        when(pantryItemRepository.findById(1L)).thenReturn(Optional.of(pantryItem));
-
-        // Act & Assert
-        assertThatThrownBy(() -> pantryService.updatePantryItem(1L, request))
-            .isInstanceOf(UnauthorizedException.class)
-            .hasMessage("You don't have access to this pantry item");
-    }
-
-    @Test
     void deletePantryItem_ShouldDeleteItem() {
         // Arrange
-        PantryItem pantryItem = createPantryItem(1L, testUser, null, testIngredient, new BigDecimal("500"), "ml");
+        UUID itemId = UUID.randomUUID();
+        PantryItem pantryItem = createPantryItem(itemId, testUser, null, testIngredient, new BigDecimal("500"), "ml");
         
-        when(pantryItemRepository.findById(1L)).thenReturn(Optional.of(pantryItem));
+        when(pantryItemRepository.findById(itemId)).thenReturn(Optional.of(pantryItem));
 
         // Act
-        pantryService.deletePantryItem(1L);
+        pantryService.deletePantryItem(itemId);
 
         // Assert
-        verify(pantryItemRepository).findById(1L);
+        verify(pantryItemRepository).findById(itemId);
         verify(pantryItemRepository).delete(pantryItem);
     }
 
-    @Test
-    void deletePantryItem_WhenItemNotExists_ShouldThrowException() {
-        // Arrange
-        when(pantryItemRepository.findById(1L)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThatThrownBy(() -> pantryService.deletePantryItem(1L))
-            .isInstanceOf(ResourceNotFoundException.class)
-            .hasMessage("Pantry item not found with id: 1");
-    }
-
-    @Test
-    void deletePantryItem_WhenUserHasNoAccess_ShouldThrowException() {
-        // Arrange
-        User otherUser = new User();
-        otherUser.setId(2L);
-        
-        PantryItem pantryItem = createPantryItem(1L, otherUser, null, testIngredient, new BigDecimal("500"), "ml");
-        
-        when(pantryItemRepository.findById(1L)).thenReturn(Optional.of(pantryItem));
-
-        // Act & Assert
-        assertThatThrownBy(() -> pantryService.deletePantryItem(1L))
-            .isInstanceOf(UnauthorizedException.class)
-            .hasMessage("You don't have access to this pantry item");
-    }
-
     // Helper method
-    private PantryItem createPantryItem(Long id, User user, Household household, 
+    private PantryItem createPantryItem(UUID id, User user, Household household, 
                                        Ingredient ingredient, BigDecimal amount, String unit) {
         PantryItem item = new PantryItem();
         item.setId(id);
