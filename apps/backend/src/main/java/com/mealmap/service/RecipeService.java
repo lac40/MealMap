@@ -5,12 +5,14 @@ import com.mealmap.model.entity.Recipe;
 import com.mealmap.model.entity.RecipeItem;
 import com.mealmap.model.entity.User;
 import com.mealmap.repository.RecipeRepository;
+import com.mealmap.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 public class RecipeService {
 
     private final RecipeRepository recipeRepository;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public RecipePageResponse getRecipes(Integer limit, String cursor, String query) {
@@ -159,6 +162,16 @@ public class RecipeService {
     }
 
     private User getCurrentUser() {
-        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email;
+        
+        if (principal instanceof UserDetails) {
+            email = ((UserDetails) principal).getUsername();
+        } else {
+            email = principal.toString();
+        }
+        
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 }

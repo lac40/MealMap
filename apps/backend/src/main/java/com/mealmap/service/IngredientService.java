@@ -9,12 +9,14 @@ import com.mealmap.model.entity.Ingredient;
 import com.mealmap.model.entity.User;
 import com.mealmap.repository.CategoryRepository;
 import com.mealmap.repository.IngredientRepository;
+import com.mealmap.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -30,6 +32,7 @@ public class IngredientService {
 
     private final IngredientRepository ingredientRepository;
     private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public IngredientPageResponse getIngredients(Integer limit, String cursor, String query, UUID categoryId) {
@@ -153,6 +156,16 @@ public class IngredientService {
     }
 
     private User getCurrentUser() {
-        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email;
+        
+        if (principal instanceof UserDetails) {
+            email = ((UserDetails) principal).getUsername();
+        } else {
+            email = principal.toString();
+        }
+        
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 }
