@@ -13,7 +13,7 @@ import java.util.UUID;
 public interface PantryItemRepository extends JpaRepository<PantryItem, UUID> {
 
     @Query("SELECT p FROM PantryItem p " +
-           "WHERE p.user.id = :userId OR p.household.id IN :householdIds " +
+           "WHERE p.user.id = :userId OR (p.household.id IS NOT NULL AND p.household.id IN :householdIds) " +
            "ORDER BY p.createdAt DESC")
     List<PantryItem> findByUserOrHouseholds(
             @Param("userId") UUID userId,
@@ -30,7 +30,7 @@ public interface PantryItemRepository extends JpaRepository<PantryItem, UUID> {
     long countByUserId(@Param("userId") UUID userId);
     
     @Query("SELECT COUNT(p) FROM PantryItem p " +
-           "WHERE p.user.id = :userId OR p.household.id IN :householdIds")
+           "WHERE p.user.id = :userId OR (p.household.id IS NOT NULL AND p.household.id IN :householdIds)")
     long countByUserOrHouseholds(
             @Param("userId") UUID userId,
             @Param("householdIds") List<UUID> householdIds

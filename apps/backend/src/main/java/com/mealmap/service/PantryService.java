@@ -45,10 +45,16 @@ public class PantryService {
             householdIds.add(currentUser.getHousehold().getId());
         }
 
-        List<PantryItem> items = pantryItemRepository.findByUserOrHouseholds(
-                currentUser.getId(),
-                householdIds
-        );
+        // Use appropriate query based on whether user has households
+        List<PantryItem> items;
+        if (householdIds.isEmpty()) {
+            items = pantryItemRepository.findByUserId(currentUser.getId());
+        } else {
+            items = pantryItemRepository.findByUserOrHouseholds(
+                    currentUser.getId(),
+                    householdIds
+            );
+        }
 
         // Apply limit if provided
         if (limit != null && limit > 0 && items.size() > limit) {
