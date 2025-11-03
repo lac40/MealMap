@@ -36,6 +36,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("RecipeService Tests")
+@SuppressWarnings("null")
 class RecipeServiceTest {
 
     @Mock

@@ -38,8 +38,8 @@ public class AuthService {
                 .emailVerified(false)
                 .build();
         
-        user = userRepository.save(user);
-        return mapToDto(user);
+        User savedUser = userRepository.save(user);
+        return mapToDto(savedUser);
     }
     
     @Transactional(readOnly = true)

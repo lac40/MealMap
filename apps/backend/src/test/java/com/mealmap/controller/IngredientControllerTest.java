@@ -33,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     }
 )
 @DisplayName("IngredientController Integration Tests")
+@SuppressWarnings("null")
 class IngredientControllerTest {
 
     @Autowired

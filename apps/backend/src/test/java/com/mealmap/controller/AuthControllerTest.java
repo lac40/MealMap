@@ -31,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     }
 )
 @DisplayName("AuthController Integration Tests")
+@SuppressWarnings("null")
 class AuthControllerTest {
 
     @Autowired
