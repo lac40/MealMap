@@ -44,6 +44,9 @@ const Layout = () => {
             <NavLink to="/planner" icon={<Calendar size={20} />}>
               Planner
             </NavLink>
+            <NavLink to="/pantry" icon={<Package size={20} />}>
+              Pantry
+            </NavLink>
             <NavLink to="/grocery" icon={<ShoppingCart size={20} />}>
               Grocery List
             </NavLink>

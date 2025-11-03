@@ -7,6 +7,7 @@ import DashboardPage from './pages/DashboardPage'
 import IngredientsPage from './pages/IngredientsPage'
 import RecipesPage from './pages/RecipesPage'
 import PlannerPage from './pages/PlannerPage'
+import PantryPage from './pages/PantryPage'
 import GroceryPage from './pages/GroceryPage'
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
         <Route path="/ingredients" element={<IngredientsPage />} />
         <Route path="/recipes" element={<RecipesPage />} />
         <Route path="/planner" element={<PlannerPage />} />
+        <Route path="/pantry" element={<PantryPage />} />
         <Route path="/grocery" element={<GroceryPage />} />
       </Route>
 
