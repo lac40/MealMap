@@ -53,7 +53,9 @@ public class GroceryService {
             // Update existing list
             GroceryList groceryList = existingList.get();
             groceryList.getTrips().clear();
-            groceryList.getTrips().addAll(computeTrips(request, plannerWeek, currentUser));
+            List<GroceryTrip> trips = computeTrips(request, plannerWeek, currentUser);
+            trips.forEach(trip -> trip.setGroceryList(groceryList));
+            groceryList.getTrips().addAll(trips);
             GroceryList saved = groceryListRepository.save(groceryList);
             return groceryMapper.toDto(saved);
         } else {
@@ -62,11 +64,18 @@ public class GroceryService {
                 .plannerWeek(plannerWeek)
                 .user(plannerWeek.getUser())
                 .household(plannerWeek.getHousehold())
-                .trips(computeTrips(request, plannerWeek, currentUser))
+                .trips(new ArrayList<>())
                 .build();
             
             GroceryList saved = groceryListRepository.save(groceryList);
-            return groceryMapper.toDto(saved);
+            
+            // Now add trips with the grocery list reference
+            List<GroceryTrip> trips = computeTrips(request, plannerWeek, currentUser);
+            trips.forEach(trip -> trip.setGroceryList(saved));
+            saved.getTrips().addAll(trips);
+            GroceryList updated = groceryListRepository.save(saved);
+            
+            return groceryMapper.toDto(updated);
         }
     }
     

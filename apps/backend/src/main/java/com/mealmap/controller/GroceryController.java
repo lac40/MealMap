@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/v1/grocery")
+@RequestMapping("/grocery")
 @RequiredArgsConstructor
 public class GroceryController {
     
