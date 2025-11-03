@@ -12,4 +12,7 @@ import java.util.UUID;
 public interface RecipeRepository extends JpaRepository<Recipe, UUID> {
     Page<Recipe> findByOwnerUserId(UUID ownerUserId, Pageable pageable);
     Page<Recipe> findByOwnerUserIdAndNameContainingIgnoreCase(UUID ownerUserId, String name, Pageable pageable);
+    
+    long countByOwnerUserId(UUID ownerUserId);
+    long countByOwnerUserIdOrOwnerUserHouseholdId(UUID ownerUserId, UUID householdId);
 }

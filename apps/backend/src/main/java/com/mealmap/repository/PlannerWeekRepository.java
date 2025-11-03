@@ -32,4 +32,25 @@ public interface PlannerWeekRepository extends JpaRepository<PlannerWeek, UUID> 
 
     @Query("SELECT pw FROM PlannerWeek pw WHERE pw.user.id = :userId")
     List<PlannerWeek> findAllByUserId(@Param("userId") UUID userId);
+    
+    @Query("SELECT COUNT(pi) FROM PlannerWeek pw JOIN pw.items pi " +
+           "WHERE pw.user.id = :userId " +
+           "AND pw.startDate >= :startDate AND pw.startDate <= :endDate " +
+           "AND pi.recipe IS NOT NULL")
+    long countPlannerItemsByUserIdAndDateRange(
+            @Param("userId") UUID userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+    
+    @Query("SELECT COUNT(pi) FROM PlannerWeek pw JOIN pw.items pi " +
+           "WHERE (pw.user.id = :userId OR pw.household.id IN :householdIds) " +
+           "AND pw.startDate >= :startDate AND pw.startDate <= :endDate " +
+           "AND pi.recipe IS NOT NULL")
+    long countPlannerItemsByUserOrHouseholdsAndDateRange(
+            @Param("userId") UUID userId,
+            @Param("householdIds") List<UUID> householdIds,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 }
