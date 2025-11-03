@@ -43,10 +43,16 @@ class RecipeServiceTest {
     private RecipeRepository recipeRepository;
 
     @Mock
+    private com.mealmap.repository.UserRepository userRepository;
+
+    @Mock
     private SecurityContext securityContext;
 
     @Mock
     private Authentication authentication;
+
+    @Mock
+    private org.springframework.security.core.userdetails.UserDetails userDetails;
 
     @InjectMocks
     private RecipeService recipeService;
@@ -105,7 +111,9 @@ class RecipeServiceTest {
         // Setup security context
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(testUser);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        when(userDetails.getUsername()).thenReturn(testUser.getEmail());
+        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
     }
 
     @Test
