@@ -25,4 +25,14 @@ public interface PantryItemRepository extends JpaRepository<PantryItem, UUID> {
 
     @Query("SELECT p FROM PantryItem p WHERE p.household.id = :householdId")
     List<PantryItem> findByHouseholdId(@Param("householdId") UUID householdId);
+    
+    @Query("SELECT COUNT(p) FROM PantryItem p WHERE p.user.id = :userId")
+    long countByUserId(@Param("userId") UUID userId);
+    
+    @Query("SELECT COUNT(p) FROM PantryItem p " +
+           "WHERE p.user.id = :userId OR p.household.id IN :householdIds")
+    long countByUserOrHouseholds(
+            @Param("userId") UUID userId,
+            @Param("householdIds") List<UUID> householdIds
+    );
 }
