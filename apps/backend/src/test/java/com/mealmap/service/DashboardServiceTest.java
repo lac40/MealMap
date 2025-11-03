@@ -181,10 +181,6 @@ class DashboardServiceTest {
     void shouldUseCorrectDateRangesForCurrentWeekAndUpcoming() {
         // Given
         testUser.setHousehold(null);
-        LocalDate today = LocalDate.now();
-        LocalDate currentWeekStart = today.with(java.time.DayOfWeek.MONDAY);
-        LocalDate currentWeekEnd = currentWeekStart.plusDays(6);
-        LocalDate upcomingEnd = today.plusDays(6);
 
         when(ingredientRepository.countByOwnerUserId(userId)).thenReturn(0L);
         when(recipeRepository.countByOwnerUserId(userId)).thenReturn(0L);

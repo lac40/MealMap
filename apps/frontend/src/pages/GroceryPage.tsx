@@ -153,7 +153,7 @@ const GroceryPage = () => {
                         {category}
                       </h3>
                       <div className="space-y-2">
-                        {items.map((item, itemIndex) => {
+                        {items.map((item) => {
                           const originalIndex = trip.items.findIndex(
                             (i) => i.ingredientId === item.ingredientId
                           )

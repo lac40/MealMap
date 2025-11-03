@@ -6,7 +6,6 @@ import {
   getPlannerWeeks,
   createPlannerWeek,
   updatePlannerWeek,
-  deletePlannerWeek,
   getMondayOfWeek,
   formatDate,
   getWeekDates,
@@ -16,7 +15,6 @@ import {
   type CreatePlannerItemRequest,
 } from '@/services/planner.service'
 import { getRecipes } from '@/services/recipe.service'
-import { getErrorMessage } from '@/lib/api'
 import Button from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
 import Select from '@/components/ui/Select'
@@ -208,10 +206,10 @@ const PlannerPage = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handlePreviousWeek} leftIcon={<ChevronLeft />}>
+            <Button variant="secondary" onClick={handlePreviousWeek} leftIcon={<ChevronLeft />}>
               Previous
             </Button>
-            <Button variant="outline" onClick={handleNextWeek} rightIcon={<ChevronRight />}>
+            <Button variant="secondary" onClick={handleNextWeek} rightIcon={<ChevronRight />}>
               Next
             </Button>
           </div>

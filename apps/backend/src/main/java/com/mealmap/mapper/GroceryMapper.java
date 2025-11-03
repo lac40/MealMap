@@ -6,7 +6,6 @@ import com.mealmap.model.dto.grocery.GroceryTripDto;
 import com.mealmap.model.embedded.GroceryItem;
 import com.mealmap.model.embedded.GroceryTrip;
 import com.mealmap.model.entity.GroceryList;
-import com.mealmap.model.entity.Ingredient;
 import com.mealmap.repository.IngredientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
