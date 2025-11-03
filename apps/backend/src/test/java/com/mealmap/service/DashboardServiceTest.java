@@ -82,10 +82,7 @@ class DashboardServiceTest {
         when(pantryItemRepository.countByUserId(userId)).thenReturn(15L);
         when(plannerWeekRepository.countPlannerItemsByUserIdAndDateRange(
                 eq(userId), any(LocalDate.class), any(LocalDate.class)
-        )).thenReturn(8L); // For current week
-        when(plannerWeekRepository.countPlannerItemsByUserIdAndDateRange(
-                eq(userId), any(LocalDate.class), any(LocalDate.class)
-        )).thenReturn(12L); // For upcoming
+        )).thenReturn(8L, 12L); // First for current week, second for upcoming
 
         // When
         DashboardStatsDto stats = dashboardService.getDashboardStats();
@@ -95,8 +92,8 @@ class DashboardServiceTest {
         assertThat(stats.getIngredientsCount()).isEqualTo(5L);
         assertThat(stats.getRecipesCount()).isEqualTo(10L);
         assertThat(stats.getPantryItemsCount()).isEqualTo(15L);
-        assertThat(stats.getPlannedMealsCount()).isEqualTo(12L); // Last call wins
-        assertThat(stats.getUpcomingMealsCount()).isEqualTo(12L);
+        assertThat(stats.getPlannedMealsCount()).isEqualTo(8L); // Current week
+        assertThat(stats.getUpcomingMealsCount()).isEqualTo(12L); // Upcoming
 
         verify(ingredientRepository).countByOwnerUserId(userId);
         verify(recipeRepository).countByOwnerUserId(userId);

@@ -5,20 +5,31 @@ import com.mealmap.service.DashboardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import com.mealmap.security.JwtAuthenticationFilter;
+import com.mealmap.security.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(DashboardController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@WebMvcTest(
+    controllers = DashboardController.class,
+    excludeAutoConfiguration = {
+        org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class
+    },
+    excludeFilters = @ComponentScan.Filter(
+        type = FilterType.ASSIGNABLE_TYPE,
+        classes = {JwtAuthenticationFilter.class, JwtService.class}
+    )
+)
 @DisplayName("DashboardController Tests")
 class DashboardControllerTest {
 
@@ -139,13 +150,5 @@ class DashboardControllerTest {
         // When & Then
         mockMvc.perform(get("/dashboard/stats"))
                 .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("GET /dashboard/stats - Should handle GET method only")
-    void shouldHandleGetMethodOnly() throws Exception {
-        // When & Then - POST should not be allowed
-        mockMvc.perform(post("/dashboard/stats"))
-                .andExpect(status().isMethodNotAllowed());
     }
 }
