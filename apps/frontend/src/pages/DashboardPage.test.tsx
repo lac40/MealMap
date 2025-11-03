@@ -34,7 +34,9 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />)
 
-    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    })
   })
 
   it('displays loading state initially', () => {
@@ -42,9 +44,11 @@ describe('DashboardPage', () => {
       () => new Promise(() => {})
     )
 
-    render(<DashboardPage />)
+    const { container } = render(<DashboardPage />)
 
-    expect(screen.getByRole('status', { hidden: true })).toBeInTheDocument() // Loader2 spinner
+    // Check for the loading spinner by looking for the animate-spin class
+    const spinner = container.querySelector('.animate-spin')
+    expect(spinner).toBeInTheDocument()
   })
 
   it('displays all dashboard statistics cards', async () => {
