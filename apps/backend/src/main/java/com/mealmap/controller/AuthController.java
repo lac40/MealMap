@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     
     private final AuthService authService;
+    private final com.mealmap.security.JwtService jwtService;
     
     @PostMapping("/register")
     public ResponseEntity<UserDto> register(@Valid @RequestBody RegisterRequest request) {
@@ -31,8 +32,14 @@ public class AuthController {
     }
     
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout() {
-        // TODO: Implement token revocation if needed
+    public ResponseEntity<Void> logout(@RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7).trim();
+            if (!token.isEmpty()) {
+                jwtService.revokeToken(token);
+            }
+        }
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
         return ResponseEntity.noContent().build();
     }
     

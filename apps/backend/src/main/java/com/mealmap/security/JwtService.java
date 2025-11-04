@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class JwtService {
@@ -25,6 +26,8 @@ public class JwtService {
 
     @Value("${jwt.refresh-expiration}")
     private long refreshExpiration;
+
+    private final Map<String, Date> revokedTokens = new ConcurrentHashMap<>();
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -45,6 +48,28 @@ public class JwtService {
 
     public String generateRefreshToken(UserDetails userDetails) {
         return buildToken(new HashMap<>(), userDetails, refreshExpiration);
+    }
+
+    public void revokeToken(String token) {
+        if (token == null || token.isBlank()) {
+            return;
+        }
+        purgeExpiredRevokedTokens();
+        Date expiration;
+        try {
+            expiration = extractExpiration(token);
+        } catch (Exception ex) {
+            expiration = new Date();
+        }
+        revokedTokens.put(token, expiration);
+    }
+
+    public boolean isTokenRevoked(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        purgeExpiredRevokedTokens();
+        return revokedTokens.containsKey(token);
     }
 
     private String buildToken(
@@ -69,6 +94,11 @@ public class JwtService {
 
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
+    }
+
+    private void purgeExpiredRevokedTokens() {
+        Date now = new Date();
+        revokedTokens.entrySet().removeIf(entry -> entry.getValue().before(now));
     }
 
     private Date extractExpiration(String token) {

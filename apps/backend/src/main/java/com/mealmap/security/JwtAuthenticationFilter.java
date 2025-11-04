@@ -39,7 +39,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        jwt = authHeader.substring(7);
+        jwt = authHeader.substring(7).trim();
+
+        if (jwt.isEmpty() || jwtService.isTokenRevoked(jwt)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         
         try {
             userEmail = jwtService.extractUsername(jwt);
