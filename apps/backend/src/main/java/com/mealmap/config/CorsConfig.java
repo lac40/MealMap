@@ -35,7 +35,10 @@ public class CorsConfig {
             "RateLimit-Limit",
             "RateLimit-Remaining", 
             "RateLimit-Reset",
-            "Trace-Id"
+            "Trace-Id",
+            "Authorization",
+            "X-Access-Token",
+            "X-Expires-In"
         ));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
