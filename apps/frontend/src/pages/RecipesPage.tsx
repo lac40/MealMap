@@ -1,3 +1,28 @@
+/**
+ * RecipesPage Component
+ * 
+ * Complete CRUD interface for managing recipes with the following features:
+ * 
+ * Key Features:
+ * - List all recipes with pagination and search
+ * - Create new recipes with multiple ingredients
+ * - Edit existing recipes
+ * - Delete recipes with confirmation
+ * - Dynamic form with ingredient addition/removal
+ * 
+ * Technical Implementation:
+ * - React Query for data fetching and mutations
+ * - React Hook Form for form state management
+ * - Zod for form validation
+ * - Field arrays for dynamic ingredient list
+ * - Optimistic UI updates via cache invalidation
+ * 
+ * State Management:
+ * - Server state: React Query (recipes, ingredients)
+ * - Form state: React Hook Form
+ * - UI state: Local useState (modal visibility, edit mode)
+ */
+
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, useFieldArray } from 'react-hook-form'
@@ -15,12 +40,17 @@ import Select from '@/components/ui/Select'
 
 const RecipesPage = () => {
   const queryClient = useQueryClient()
+  
+  // UI state management
   const [searchQuery, setSearchQuery] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
 
-  // Fetch recipes
+  /**
+   * Fetch recipes with search functionality
+   * React Query automatically caches and refetches when searchQuery changes
+   */
   const {
     data: recipesData,
     isLoading: recipesLoading,
@@ -34,14 +64,20 @@ const RecipesPage = () => {
       }),
   })
 
-  // Fetch ingredients for the form
+  /**
+   * Fetch ingredients for the form dropdown
+   * Only fetches when form is open (enabled: isFormOpen)
+   */
   const { data: ingredientsData } = useQuery({
     queryKey: ['ingredients-all'],
     queryFn: () => ingredientService.getIngredients({ limit: 100 }),
     enabled: isFormOpen,
   })
 
-  // Create mutation
+  /**
+   * Create recipe mutation
+   * On success: invalidates recipes cache to trigger refetch
+   */
   const createMutation = useMutation({
     mutationFn: recipeService.createRecipe,
     onSuccess: () => {
@@ -53,7 +89,10 @@ const RecipesPage = () => {
     },
   })
 
-  // Update mutation
+  /**
+   * Update recipe mutation
+   * On success: invalidates recipes cache to trigger refetch
+   */
   const updateMutation = useMutation({
     mutationFn: recipeService.updateRecipe,
     onSuccess: () => {
@@ -65,7 +104,10 @@ const RecipesPage = () => {
     },
   })
 
-  // Delete mutation
+  /**
+   * Delete recipe mutation
+   * On success: invalidates recipes cache to trigger refetch
+   */
   const deleteMutation = useMutation({
     mutationFn: recipeService.deleteRecipe,
     onSuccess: () => {
@@ -76,7 +118,13 @@ const RecipesPage = () => {
     },
   })
 
-  // Form setup
+  /**
+   * Form setup with React Hook Form and Zod validation
+   * 
+   * - zodResolver: Integrates Zod schema for validation
+   * - defaultValues: Initial form state
+   * - errors: Validation error messages
+   */
   const {
     register,
     handleSubmit,
@@ -92,11 +140,19 @@ const RecipesPage = () => {
     },
   })
 
+  /**
+   * Field array for dynamic ingredient list
+   * Provides methods to add/remove ingredient rows
+   */
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'items',
   })
 
+  /**
+   * Open form for creating a new recipe
+   * Resets form to default state
+   */
   const handleOpenForm = () => {
     setEditingRecipe(null)
     setServerError(null)
@@ -108,6 +164,10 @@ const RecipesPage = () => {
     setIsFormOpen(true)
   }
 
+  /**
+   * Open form for editing an existing recipe
+   * Populates form with recipe data
+   */
   const handleEdit = (recipe: Recipe) => {
     setEditingRecipe(recipe)
     setServerError(null)
@@ -123,6 +183,9 @@ const RecipesPage = () => {
     setIsFormOpen(true)
   }
 
+  /**
+   * Close form and clear all state
+   */
   const handleCloseForm = () => {
     setIsFormOpen(false)
     setEditingRecipe(null)
@@ -130,6 +193,10 @@ const RecipesPage = () => {
     reset()
   }
 
+  /**
+   * Form submission handler
+   * Calls create or update mutation based on edit mode
+   */
   const onSubmit = (data: RecipeFormData) => {
     setServerError(null)
     const recipeData: recipeService.CreateRecipeDto = {
@@ -149,12 +216,19 @@ const RecipesPage = () => {
     }
   }
 
+  /**
+   * Delete recipe with confirmation dialog
+   */
   const handleDelete = (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete "${name}"?`)) {
       deleteMutation.mutate(id)
     }
   }
 
+  /**
+   * Helper function to get ingredient name from ID
+   * Used for displaying ingredient names in recipe cards
+   */
   const getIngredientName = (ingredientId: string) => {
     const ingredient = ingredientsData?.data.find((i) => i.id === ingredientId)
     return ingredient?.name || 'Unknown'
@@ -163,6 +237,7 @@ const RecipesPage = () => {
   const recipes = recipesData?.data || []
   const ingredients = ingredientsData?.data || []
 
+  // Loading state
   if (recipesLoading) {
     return (
       <div className="min-h-screen bg-surface-50 p-4 md:p-8">

@@ -1,7 +1,23 @@
+/**
+ * Form Validation Schemas
+ * 
+ * Centralized validation logic using Zod for type-safe form validation.
+ * All forms in the application use these schemas with react-hook-form
+ * to provide client-side validation before API submission.
+ * 
+ * Benefits:
+ * - Type inference for TypeScript
+ * - Runtime validation
+ * - Consistent error messages
+ * - Automatic form type generation
+ */
+
 import { z } from 'zod'
 
 /**
  * Login form validation schema
+ * 
+ * Validates user login credentials including optional MFA code
  */
 export const loginSchema = z.object({
   email: z
@@ -16,13 +32,15 @@ export const loginSchema = z.object({
     .length(6, 'MFA code must be 6 digits')
     .regex(/^\d+$/, 'MFA code must contain only numbers')
     .optional()
-    .or(z.literal('')),
+    .or(z.literal('')),  // Allow empty string for when MFA is not required
 })
 
 export type LoginFormData = z.infer<typeof loginSchema>
 
 /**
  * Register form validation schema
+ * 
+ * Validates new user registration with password confirmation
  */
 export const registerSchema = z.object({
   displayName: z
@@ -45,13 +63,15 @@ export const registerSchema = z.object({
     .min(1, 'Please confirm your password'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
-  path: ['confirmPassword'],
+  path: ['confirmPassword'],  // Attach error to confirmPassword field
 })
 
 export type RegisterFormData = z.infer<typeof registerSchema>
 
 /**
  * Profile update validation schema
+ * 
+ * Validates user profile information updates
  */
 export const profileUpdateSchema = z.object({
   displayName: z
@@ -68,6 +88,8 @@ export type ProfileUpdateFormData = z.infer<typeof profileUpdateSchema>
 
 /**
  * Password change validation schema
+ * 
+ * Validates password change with current password verification
  */
 export const passwordChangeSchema = z.object({
   currentPassword: z
@@ -92,6 +114,8 @@ export type PasswordChangeFormData = z.infer<typeof passwordChangeSchema>
 
 /**
  * Ingredient form validation schema
+ * 
+ * Validates ingredient creation and editing
  */
 export const ingredientSchema = z.object({
   name: z
@@ -107,7 +131,7 @@ export const ingredientSchema = z.object({
   }),
   packageAmount: z
     .number({ invalid_type_error: 'Package amount must be a number' })
-    .or(z.string().transform((val) => Number(val)))
+    .or(z.string().transform((val) => Number(val)))  // Handle string inputs from forms
     .pipe(z.number().positive('Package amount must be greater than 0').max(100000, 'Package amount is too large')),
   packageUnit: z.enum(['g', 'kg', 'ml', 'l', 'piece', 'pack'], {
     errorMap: () => ({ message: 'Please select a package unit' }),
@@ -120,7 +144,11 @@ export const ingredientSchema = z.object({
 
 export type IngredientFormData = z.infer<typeof ingredientSchema>
 
-// Recipe validation
+/**
+ * Recipe item validation schema
+ * 
+ * Validates individual ingredient items within a recipe
+ */
 export const recipeItemSchema = z.object({
   ingredientId: z.string().uuid('Invalid ingredient ID'),
   quantity: z.object({
@@ -140,6 +168,11 @@ export const recipeItemSchema = z.object({
   packageNote: z.string().max(100, 'Note is too long').optional(),
 })
 
+/**
+ * Recipe form validation schema
+ * 
+ * Validates complete recipe with all ingredients
+ */
 export const recipeSchema = z.object({
   name: z
     .string()
@@ -149,7 +182,7 @@ export const recipeSchema = z.object({
     .string()
     .url('Must be a valid URL')
     .optional()
-    .or(z.literal('')),
+    .or(z.literal('')),  // Allow empty string for optional URL
   items: z
     .array(recipeItemSchema)
     .min(1, 'Recipe must have at least one ingredient')

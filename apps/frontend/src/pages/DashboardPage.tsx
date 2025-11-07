@@ -1,13 +1,29 @@
+/**
+ * DashboardPage Component
+ * 
+ * Landing page for authenticated users showing overview statistics:
+ * - Total ingredients available
+ * - Total recipes in collection
+ * - Planned meals count
+ * - Pantry items count
+ * - Upcoming meals
+ * 
+ * Uses React Query to fetch dashboard statistics from the API
+ */
+
 import { useQuery } from '@tanstack/react-query'
 import { getDashboardStats } from '../services/dashboard.service'
 import { Loader2 } from 'lucide-react'
 
 const DashboardPage = () => {
+  // Fetch dashboard statistics with React Query
+  // Automatically handles loading, error states, and caching
   const { data: stats, isLoading, error } = useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: getDashboardStats,
+    queryKey: ['dashboard-stats'], // Unique key for caching
+    queryFn: getDashboardStats,     // Function to fetch data
   })
 
+  // Loading state - Show spinner while data is being fetched
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -16,6 +32,7 @@ const DashboardPage = () => {
     )
   }
 
+  // Error state - Show error message if data fetch fails
   if (error) {
     return (
       <div className="text-center text-red-600 py-8">
@@ -24,6 +41,7 @@ const DashboardPage = () => {
     )
   }
 
+  // Success state - Display dashboard statistics in cards
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
@@ -63,6 +81,16 @@ const DashboardPage = () => {
   )
 }
 
+/**
+ * DashboardCard Component
+ * 
+ * Displays a single statistic with color-coded styling
+ * 
+ * @param title - Card title (e.g., "Ingredients")
+ * @param count - Numeric value to display
+ * @param color - Color theme for the count display
+ * @param subtitle - Optional description text below the count
+ */
 const DashboardCard = ({ 
   title, 
   count, 
@@ -74,6 +102,7 @@ const DashboardCard = ({
   color: string
   subtitle?: string
 }) => {
+  // Map color names to Tailwind CSS classes
   const colorClasses = {
     blue: 'bg-blue-100 text-blue-800',
     green: 'bg-green-100 text-green-800',
