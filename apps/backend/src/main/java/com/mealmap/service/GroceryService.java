@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -87,9 +86,7 @@ public class GroceryService {
         subtractPantryItems(neededIngredients, currentUser, plannerWeek.getHousehold());
         
         // Step 3: Split into trips based on date ranges
-        List<GroceryTrip> trips = splitIntoTrips(request, plannerWeek, neededIngredients);
-        
-        return trips;
+        return splitIntoTrips(request, plannerWeek, neededIngredients);
     }
     
     private Map<UUID, IngredientAggregate> aggregateIngredientsFromPlanner(PlannerWeek plannerWeek) {
@@ -123,7 +120,7 @@ public class GroceryService {
     
     private void subtractPantryItems(Map<UUID, IngredientAggregate> neededIngredients, User currentUser, Household household) {
         // Fetch pantry items for user and household
-        List<PantryItem> pantryItems = new ArrayList<>();
+        List<PantryItem> pantryItems;
         
         if (household != null) {
             List<UUID> householdIds = List.of(household.getId());
@@ -145,36 +142,54 @@ public class GroceryService {
     
     private List<GroceryTrip> splitIntoTrips(ComputeGroceryRequest request, PlannerWeek plannerWeek, 
                                               Map<UUID, IngredientAggregate> neededIngredients) {
-        List<GroceryTrip> trips = new ArrayList<>();
-        
         LocalDate weekStart = plannerWeek.getStartDate();
         LocalDate weekEnd = weekStart.plusDays(6);
         
         if ("custom".equals(request.getSplitRule()) && request.getCustomSplits() != null) {
-            // Use custom splits
-            for (int i = 0; i < request.getCustomSplits().size(); i++) {
-                ComputeGroceryRequest.CustomSplit split = request.getCustomSplits().get(i);
-                trips.add(createTrip(i, split.getFrom(), split.getTo(), neededIngredients));
-            }
-        } else {
-            // Default: Sun-Wed and Thu-Sat split
-            if (request.getTrips() == 1) {
-                trips.add(createTrip(0, weekStart, weekEnd, neededIngredients));
-            } else if (request.getTrips() == 2) {
-                LocalDate midWeek = weekStart.plusDays(3); // Wednesday
+            return createCustomSplitTrips(request.getCustomSplits(), neededIngredients);
+        }
+        
+        return createDefaultSplitTrips(request.getTrips(), weekStart, weekEnd, neededIngredients);
+    }
+    
+    private List<GroceryTrip> createCustomSplitTrips(List<ComputeGroceryRequest.CustomSplit> customSplits,
+                                                      Map<UUID, IngredientAggregate> neededIngredients) {
+        List<GroceryTrip> trips = new ArrayList<>();
+        for (int i = 0; i < customSplits.size(); i++) {
+            ComputeGroceryRequest.CustomSplit split = customSplits.get(i);
+            trips.add(createTrip(i, split.getFrom(), split.getTo(), neededIngredients));
+        }
+        return trips;
+    }
+    
+    private List<GroceryTrip> createDefaultSplitTrips(int tripCount, LocalDate weekStart, LocalDate weekEnd,
+                                                       Map<UUID, IngredientAggregate> neededIngredients) {
+        List<GroceryTrip> trips = new ArrayList<>();
+        
+        switch (tripCount) {
+            case 1 -> trips.add(createTrip(0, weekStart, weekEnd, neededIngredients));
+            case 2 -> {
+                LocalDate midWeek = weekStart.plusDays(3);
                 trips.add(createTrip(0, weekStart, midWeek, neededIngredients));
                 trips.add(createTrip(1, midWeek.plusDays(1), weekEnd, neededIngredients));
-            } else {
-                // Split evenly across N trips
-                int daysPerTrip = 7 / request.getTrips();
-                for (int i = 0; i < request.getTrips(); i++) {
-                    LocalDate tripStart = weekStart.plusDays(i * daysPerTrip);
-                    LocalDate tripEnd = (i == request.getTrips() - 1) 
-                        ? weekEnd 
-                        : weekStart.plusDays((i + 1) * daysPerTrip - 1);
-                    trips.add(createTrip(i, tripStart, tripEnd, neededIngredients));
-                }
             }
+            default -> trips.addAll(createEvenlySpacedTrips(tripCount, weekStart, weekEnd, neededIngredients));
+        }
+        
+        return trips;
+    }
+    
+    private List<GroceryTrip> createEvenlySpacedTrips(int tripCount, LocalDate weekStart, LocalDate weekEnd,
+                                                       Map<UUID, IngredientAggregate> neededIngredients) {
+        List<GroceryTrip> trips = new ArrayList<>();
+        int daysPerTrip = 7 / tripCount;
+        
+        for (int i = 0; i < tripCount; i++) {
+            LocalDate tripStart = weekStart.plusDays((long) i * daysPerTrip);
+            LocalDate tripEnd = (i == tripCount - 1) 
+                ? weekEnd 
+                : weekStart.plusDays((long) (i + 1) * daysPerTrip - 1);
+            trips.add(createTrip(i, tripStart, tripEnd, neededIngredients));
         }
         
         return trips;
@@ -201,8 +216,8 @@ public class GroceryService {
                     item.setChecked(false);
                     return item;
                 })
-                .collect(Collectors.toList());
-            trip.setItems(items);
+                .toList();
+            trip.setItems(new ArrayList<>(items));
         } else {
             trip.setItems(new ArrayList<>());
         }
@@ -334,9 +349,11 @@ public class GroceryService {
         private com.mealmap.model.enums.Unit getBaseUnit(com.mealmap.model.enums.Unit unit) {
             switch (unit) {
                 case kg:
+                return com.mealmap.model.enums.Unit.kg;
                 case g:
                     return com.mealmap.model.enums.Unit.g;
                 case l:
+                    return com.mealmap.model.enums.Unit.l;
                 case ml:
                     return com.mealmap.model.enums.Unit.ml;
                 default:

@@ -20,7 +20,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +43,7 @@ public class RecipeService {
 
         List<RecipeDto> data = page.getContent().stream()
                 .map(this::mapToDto)
-                .collect(Collectors.toList());
+                .toList();
 
         String nextCursor = page.hasNext() ?
                 Base64.getEncoder().encodeToString(String.valueOf(page.getNumber() + 1).getBytes()) : null;
@@ -87,7 +86,7 @@ public class RecipeService {
                         .quantity(itemDto.getQuantity())
                         .packageNote(itemDto.getPackageNote())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         recipe.setItems(items);
         Recipe savedRecipe = recipeRepository.save(recipe);
@@ -121,7 +120,7 @@ public class RecipeService {
                             .quantity(itemDto.getQuantity())
                             .packageNote(itemDto.getPackageNote())
                             .build())
-                    .collect(Collectors.toList());
+                    .toList();
             recipe.getItems().addAll(newItems);
         }
 
@@ -149,7 +148,7 @@ public class RecipeService {
                         .quantity(item.getQuantity())
                         .packageNote(item.getPackageNote())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         return RecipeDto.builder()
                 .id(recipe.getId())
@@ -165,8 +164,8 @@ public class RecipeService {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String email;
         
-        if (principal instanceof UserDetails) {
-            email = ((UserDetails) principal).getUsername();
+        if (principal instanceof UserDetails userDetails) {
+            email = userDetails.getUsername();
         } else {
             email = principal.toString();
         }

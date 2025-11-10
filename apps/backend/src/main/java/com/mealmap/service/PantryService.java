@@ -63,7 +63,7 @@ public class PantryService {
 
         List<PantryItemDto> dtos = items.stream()
                 .map(pantryMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
 
         return PantryItemPageResponse.builder()
                 .data(dtos)

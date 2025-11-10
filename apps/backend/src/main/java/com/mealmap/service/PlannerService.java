@@ -54,7 +54,7 @@ public class PlannerService {
 
         List<PlannerWeekDto> dtos = weeks.stream()
                 .map(plannerMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
 
         return PlannerWeekPageResponse.builder()
                 .data(dtos)

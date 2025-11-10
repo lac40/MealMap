@@ -24,7 +24,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +51,7 @@ public class IngredientService {
 
         List<IngredientDto> data = page.getContent().stream()
                 .map(this::mapToDto)
-                .collect(Collectors.toList());
+                .toList();
 
         String nextCursor = page.hasNext() ? 
                 Base64.getEncoder().encodeToString(String.valueOf(page.getNumber() + 1).getBytes()) : null;
@@ -159,8 +158,8 @@ public class IngredientService {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String email;
         
-        if (principal instanceof UserDetails) {
-            email = ((UserDetails) principal).getUsername();
+        if (principal instanceof UserDetails userDetails) {
+            email = userDetails.getUsername();
         } else {
             email = principal.toString();
         }
