@@ -18,13 +18,13 @@ import type { User } from '@/store/authStore'
 
 vi.mock('@/lib/api')
 
-describe('auth.service', () => {
+describe('Authentication Service', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  describe('register', () => {
-    it('registers a new user', async () => {
+  describe('User Registration', () => {
+    it('should successfully register a new user and return user data without email verification', async () => {
       const registerData: RegisterRequest = {
         email: 'test@example.com',
         password: 'SecurePass123!',
@@ -50,8 +50,8 @@ describe('auth.service', () => {
     })
   })
 
-  describe('login', () => {
-    it('logs in with email and password', async () => {
+  describe('User Login', () => {
+    it('should successfully authenticate user with valid email and password credentials', async () => {
       const loginData: LoginRequest = {
         email: 'test@example.com',
         password: 'SecurePass123!',
@@ -80,7 +80,7 @@ describe('auth.service', () => {
       expect(result.expiresIn).toBe(3600)
     })
 
-    it('logs in with MFA code', async () => {
+    it('should successfully authenticate user with valid credentials and MFA verification code', async () => {
       const loginData: LoginRequest = {
         email: 'test@example.com',
         password: 'SecurePass123!',
@@ -109,8 +109,8 @@ describe('auth.service', () => {
     })
   })
 
-  describe('refreshToken', () => {
-    it('refreshes the access token', async () => {
+  describe('Token Refresh', () => {
+    it('should successfully refresh expired access token and return new token with expiration time', async () => {
       const mockResponse = {
         accessToken: 'new-token-123',
         expiresIn: 3600,
@@ -126,8 +126,8 @@ describe('auth.service', () => {
     })
   })
 
-  describe('logout', () => {
-    it('logs out and revokes refresh token', async () => {
+  describe('User Logout', () => {
+    it('should successfully log out user and revoke refresh token on server', async () => {
       vi.mocked(api.post).mockResolvedValue({})
 
       await logout()
@@ -136,8 +136,8 @@ describe('auth.service', () => {
     })
   })
 
-  describe('sendVerificationEmail', () => {
-    it('sends a verification email', async () => {
+  describe('Email Verification Request', () => {
+    it('should successfully send verification email to user email address', async () => {
       vi.mocked(api.post).mockResolvedValue({})
 
       await sendVerificationEmail()
@@ -146,8 +146,8 @@ describe('auth.service', () => {
     })
   })
 
-  describe('confirmEmailVerification', () => {
-    it('confirms email verification with token', async () => {
+  describe('Email Verification Confirmation', () => {
+    it('should successfully verify user email address using provided verification token', async () => {
       const token = 'verification-token-123'
 
       vi.mocked(api.post).mockResolvedValue({})
@@ -158,8 +158,8 @@ describe('auth.service', () => {
     })
   })
 
-  describe('setupMFA', () => {
-    it('begins MFA setup and returns secret and URL', async () => {
+  describe('Multi-Factor Authentication Setup', () => {
+    it('should successfully initiate MFA setup and return secret key with QR code URL for authenticator app', async () => {
       const mockResponse = {
         secret: 'JBSWY3DPEHPK3PXP',
         otpauthUrl: 'otpauth://totp/MealMap:test@example.com?secret=JBSWY3DPEHPK3PXP&issuer=MealMap',
@@ -175,8 +175,8 @@ describe('auth.service', () => {
     })
   })
 
-  describe('confirmMFA', () => {
-    it('confirms MFA enrollment with code', async () => {
+  describe('Multi-Factor Authentication Confirmation', () => {
+    it('should successfully enable MFA after user provides valid verification code from authenticator app', async () => {
       const code = '123456'
 
       vi.mocked(api.post).mockResolvedValue({})
@@ -187,8 +187,8 @@ describe('auth.service', () => {
     })
   })
 
-  describe('disableMFA', () => {
-    it('disables MFA for the user', async () => {
+  describe('Multi-Factor Authentication Disable', () => {
+    it('should successfully disable MFA protection for authenticated user account', async () => {
       vi.mocked(api.post).mockResolvedValue({})
 
       await disableMFA()

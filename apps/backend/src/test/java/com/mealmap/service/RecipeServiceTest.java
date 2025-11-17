@@ -35,7 +35,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("RecipeService Tests")
+@DisplayName("Recipe Service Business Logic Tests")
 @SuppressWarnings("null")
 class RecipeServiceTest {
 
@@ -117,43 +117,54 @@ class RecipeServiceTest {
     }
 
     @Test
-    @DisplayName("Should get recipes with pagination")
-    void shouldGetRecipesWithPagination() {
-        // Given
+    @DisplayName("Should retrieve all user recipes with pagination when requested by authenticated user")
+    void shouldRetrieveAllUserRecipesWithPaginationWhenRequestedByAuthenticatedUser() {
+        // Given - authenticated user has recipes in database
         List<Recipe> recipes = Arrays.asList(testRecipe);
         Page<Recipe> page = new PageImpl<>(recipes);
         when(recipeRepository.findByOwnerUserId(eq(testUser.getId()), any(Pageable.class)))
                 .thenReturn(page);
 
-        // When
+        // When - user requests their recipes
         RecipePageResponse response = recipeService.getRecipes(20, null, null);
 
-        // Then
-        assertThat(response).isNotNull();
-        assertThat(response.getData()).hasSize(1);
-        assertThat(response.getData().get(0).getName()).isEqualTo("Grilled Chicken");
-        assertThat(response.getData().get(0).getItems()).hasSize(1);
-        assertThat(response.getNextCursor()).isNull();
+        // Then - response contains user's recipes with correct pagination
+        assertThat(response)
+                .isNotNull()
+                .satisfies(r -> {
+                    assertThat(r.getData()).hasSize(1);
+                    assertThat(r.getNextCursor()).isNull();
+                });
+        assertThat(response.getData().get(0))
+                .satisfies(recipe -> {
+                    assertThat(recipe.getName()).isEqualTo("Grilled Chicken");
+                    assertThat(recipe.getItems()).hasSize(1);
+                    assertThat(recipe.getId()).isEqualTo(testRecipe.getId());
+                });
 
         verify(recipeRepository).findByOwnerUserId(eq(testUser.getId()), any(Pageable.class));
     }
 
     @Test
-    @DisplayName("Should search recipes by name")
-    void shouldSearchRecipesByName() {
-        // Given
+    @DisplayName("Should filter user recipes by name using case-insensitive search when search query is provided")
+    void shouldFilterUserRecipesByNameUsingCaseInsensitiveSearchWhenSearchQueryProvided() {
+        // Given - user has recipe matching search term
         List<Recipe> recipes = Arrays.asList(testRecipe);
         Page<Recipe> page = new PageImpl<>(recipes);
         when(recipeRepository.findByOwnerUserIdAndNameContainingIgnoreCase(
                 eq(testUser.getId()), eq("chicken"), any(Pageable.class)))
                 .thenReturn(page);
 
-        // When
+        // When - user searches for recipes containing "chicken"
         RecipePageResponse response = recipeService.getRecipes(20, null, "chicken");
 
-        // Then
+        // Then - only matching recipes are returned
         assertThat(response).isNotNull();
-        assertThat(response.getData()).hasSize(1);
+        assertThat(response.getData())
+                .hasSize(1)
+                .allSatisfy(recipe -> 
+                    assertThat(recipe.getName().toLowerCase()).contains("chicken")
+                );
         assertThat(response.getData().get(0).getName()).isEqualTo("Grilled Chicken");
 
         verify(recipeRepository).findByOwnerUserIdAndNameContainingIgnoreCase(
@@ -161,74 +172,103 @@ class RecipeServiceTest {
     }
 
     @Test
-    @DisplayName("Should get recipe by id")
-    void shouldGetRecipeById() {
-        // Given
+    @DisplayName("Should retrieve complete recipe details including all ingredients when valid recipe ID is requested by owner")
+    void shouldRetrieveCompleteRecipeDetailsIncludingAllIngredientsWhenValidRecipeIdRequestedByOwner() {
+        // Given - recipe exists and belongs to authenticated user
         when(recipeRepository.findById(testRecipe.getId())).thenReturn(Optional.of(testRecipe));
 
-        // When
+        // When - user requests recipe by ID
         RecipeDto result = recipeService.getRecipeById(testRecipe.getId());
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(testRecipe.getId());
-        assertThat(result.getName()).isEqualTo("Grilled Chicken");
-        assertThat(result.getItems()).hasSize(1);
-        assertThat(result.getExternalUrl()).isEqualTo("https://example.com/recipe");
+        // Then - complete recipe data is returned with all ingredients
+        assertThat(result)
+                .isNotNull()
+                .satisfies(recipe -> {
+                    assertThat(recipe.getId()).isEqualTo(testRecipe.getId());
+                    assertThat(recipe.getName()).isEqualTo("Grilled Chicken");
+                    assertThat(recipe.getExternalUrl()).isEqualTo("https://example.com/recipe");
+                    assertThat(recipe.getItems())
+                            .isNotEmpty()
+                            .hasSize(1)
+                            .allSatisfy(item -> {
+                                assertThat(item.getIngredientId()).isNotNull();
+                                assertThat(item.getQuantity()).isNotNull();
+                                assertThat(item.getQuantity().getAmount()).isPositive();
+                            });
+                });
 
         verify(recipeRepository).findById(testRecipe.getId());
     }
 
     @Test
-    @DisplayName("Should throw exception when recipe not found")
-    void shouldThrowExceptionWhenRecipeNotFound() {
-        // Given
+    @DisplayName("Should throw not found exception with appropriate error message when recipe ID does not exist in database")
+    void shouldThrowNotFoundExceptionWithAppropriateErrorMessageWhenRecipeIdDoesNotExistInDatabase() {
+        // Given - recipe ID does not exist in database
         UUID nonExistentId = UUID.randomUUID();
         when(recipeRepository.findById(nonExistentId)).thenReturn(Optional.empty());
 
-        // When & Then
+        // When - user attempts to retrieve non-existent recipe
+        // Then - appropriate exception is thrown with clear error message
         assertThatThrownBy(() -> recipeService.getRecipeById(nonExistentId))
                 .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("Recipe not found");
+                .hasMessageContaining("Recipe not found")
+                .satisfies(exception -> {
+                    ResponseStatusException rse = (ResponseStatusException) exception;
+                    assertThat(rse.getStatusCode().value()).isEqualTo(404);
+                });
 
         verify(recipeRepository).findById(nonExistentId);
+        verify(recipeRepository, never()).save(any(Recipe.class));
     }
 
     @Test
-    @DisplayName("Should throw exception when accessing another user's recipe")
-    void shouldThrowExceptionWhenAccessingAnotherUsersRecipe() {
-        // Given
+    @DisplayName("Should deny access and throw authorization exception when user attempts to view another user's private recipe")
+    void shouldDenyAccessAndThrowAuthorizationExceptionWhenUserAttemptsToViewAnotherUsersPrivateRecipe() {
+        // Given - recipe belongs to different user
         UUID otherUserId = UUID.randomUUID();
         Recipe otherUserRecipe = Recipe.builder()
                 .id(UUID.randomUUID())
                 .ownerUserId(otherUserId)
-                .name("Other Recipe")
+                .name("Other User's Recipe")
                 .items(new ArrayList<>())
                 .build();
 
         when(recipeRepository.findById(otherUserRecipe.getId()))
                 .thenReturn(Optional.of(otherUserRecipe));
 
-        // When & Then
+        // When - authenticated user attempts to access recipe they don't own
+        // Then - access is denied with authorization error
         assertThatThrownBy(() -> recipeService.getRecipeById(otherUserRecipe.getId()))
                 .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("Not authorized");
+                .hasMessageContaining("Not authorized")
+                .satisfies(exception -> {
+                    ResponseStatusException rse = (ResponseStatusException) exception;
+                    assertThat(rse.getStatusCode().value()).isEqualTo(403);
+                });
 
         verify(recipeRepository).findById(otherUserRecipe.getId());
+        verify(recipeRepository, never()).save(any(Recipe.class));
+        verify(recipeRepository, never()).delete(any(Recipe.class));
     }
 
     @Test
-    @DisplayName("Should create recipe successfully")
-    void shouldCreateRecipeSuccessfully() {
-        // Given
+    @DisplayName("Should create new recipe with all provided details and associate it with authenticated user")
+    void shouldCreateNewRecipeWithAllProvidedDetailsAndAssociateItWithAuthenticatedUser() {
+        // Given - valid recipe creation request from authenticated user
         when(recipeRepository.save(any(Recipe.class))).thenReturn(testRecipe);
 
-        // When
+        // When - user creates new recipe
         RecipeDto result = recipeService.createRecipe(createRequest);
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getName()).isEqualTo("Grilled Chicken");
+        // Then - recipe is persisted with all details and associated with user
+        assertThat(result)
+                .isNotNull()
+                .satisfies(recipe -> {
+                    assertThat(recipe.getName()).isEqualTo("Grilled Chicken");
+                    assertThat(recipe.getId()).isNotNull();
+                    assertThat(recipe.getExternalUrl()).isNotBlank();
+                    assertThat(recipe.getItems()).isNotEmpty();
+                });
 
         verify(recipeRepository).save(any(Recipe.class));
     }
@@ -275,17 +315,18 @@ class RecipeServiceTest {
     }
 
     @Test
-    @DisplayName("Should delete recipe successfully")
-    void shouldDeleteRecipeSuccessfully() {
-        // Given
+    @DisplayName("Should permanently remove recipe from database when owner requests deletion")
+    void shouldPermanentlyRemoveRecipeFromDatabaseWhenOwnerRequestsDeletion() {
+        // Given - recipe exists and belongs to authenticated user
         when(recipeRepository.findById(testRecipe.getId())).thenReturn(Optional.of(testRecipe));
 
-        // When
+        // When - owner requests recipe deletion
         recipeService.deleteRecipe(testRecipe.getId());
 
-        // Then
+        // Then - recipe is permanently removed from database
         verify(recipeRepository).findById(testRecipe.getId());
         verify(recipeRepository).delete(testRecipe);
+        verify(recipeRepository, times(1)).delete(any(Recipe.class));
     }
 
     @Test

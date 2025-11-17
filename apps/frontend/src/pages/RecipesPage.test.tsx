@@ -70,12 +70,12 @@ const mockRecipes: Recipe[] = [
   },
 ]
 
-describe('RecipesPage', () => {
+describe('Recipes Page User Interface', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('renders page header and empty state', async () => {
+  it('should display page header with title and empty state message when user has no saved recipes', async () => {
     vi.mocked(recipeService.getRecipes).mockResolvedValue({
       data: [],
       nextCursor: null,
@@ -89,9 +89,12 @@ describe('RecipesPage', () => {
     await waitFor(() => {
       expect(screen.getByText('No recipes yet')).toBeInTheDocument()
     })
+    
+    // Verify service was called once
+    expect(recipeService.getRecipes).toHaveBeenCalledTimes(1)
   })
 
-  it('displays loading state', () => {
+  it('should display loading indicator while fetching recipes from server', () => {
     vi.mocked(recipeService.getRecipes).mockImplementation(
       () => new Promise(() => {})
     )
@@ -101,7 +104,7 @@ describe('RecipesPage', () => {
     expect(screen.getByText('Loading recipes...')).toBeInTheDocument()
   })
 
-  it('displays list of recipes', async () => {
+  it('should display all user saved recipes with ingredient details in a grid layout', async () => {
     vi.mocked(recipeService.getRecipes).mockResolvedValue({
       data: mockRecipes,
       nextCursor: null,
@@ -114,9 +117,14 @@ describe('RecipesPage', () => {
       expect(screen.getByText('Simple Tomato Salad')).toBeInTheDocument()
     })
 
-    // Check ingredient counts
+    // Verify ingredient counts are displayed correctly for each recipe
     expect(screen.getByText('Ingredients (3):')).toBeInTheDocument()
     expect(screen.getByText('Ingredients (2):')).toBeInTheDocument()
+    
+    // Verify service was called with correct parameters
+    expect(recipeService.getRecipes).toHaveBeenCalledWith(
+      expect.objectContaining({ limit: expect.any(Number) })
+    )
   })
 
   // Skip this test due to timing issues with userEvent.type() in test environment
@@ -145,7 +153,7 @@ describe('RecipesPage', () => {
     }, { timeout: 2000 })
   })
 
-  it('opens form modal when Add Recipe button is clicked', async () => {
+  it('should open recipe creation form modal with empty fields when user clicks Add Recipe button', async () => {
     const user = userEvent.setup()
     vi.mocked(recipeService.getRecipes).mockResolvedValue({
       data: [],
@@ -165,9 +173,12 @@ describe('RecipesPage', () => {
       expect(screen.getByRole('heading', { name: /add recipe/i })).toBeInTheDocument()
       expect(screen.getByLabelText(/recipe name/i)).toBeInTheDocument()
     })
+    
+    // Verify form has create button (not update)
+    expect(screen.getByRole('button', { name: /create recipe/i })).toBeInTheDocument()
   })
 
-  it('displays validation errors for empty required fields', async () => {
+  it('should display validation error message when user attempts to submit recipe form without required recipe name', async () => {
     const user = userEvent.setup()
     vi.mocked(recipeService.getRecipes).mockResolvedValue({
       data: [],
@@ -180,17 +191,21 @@ describe('RecipesPage', () => {
       expect(screen.getByText('No recipes yet')).toBeInTheDocument()
     })
 
-    // Open form
+    // Open form modal
     const addButton = screen.getAllByRole('button', { name: /add recipe/i })[0]
     await user.click(addButton)
 
-    // Try to submit without filling required fields
+    // Attempt to submit form without filling required name field
     const submitButton = screen.getByRole('button', { name: /create recipe/i })
     await user.click(submitButton)
 
+    // Verify validation error is displayed
     await waitFor(() => {
       expect(screen.getByText('Recipe name is required')).toBeInTheDocument()
     })
+    
+    // Verify create service was not called due to validation failure
+    expect(recipeService.createRecipe).not.toHaveBeenCalled()
   })
 
   it('opens edit form with pre-filled data', async () => {
@@ -220,7 +235,7 @@ describe('RecipesPage', () => {
     })
   })
 
-  it('deletes a recipe after confirmation', async () => {
+  it('should permanently delete recipe from user collection after user confirms deletion in confirmation dialog', async () => {
     const user = userEvent.setup()
     vi.mocked(recipeService.getRecipes).mockResolvedValue({
       data: mockRecipes,
@@ -228,8 +243,8 @@ describe('RecipesPage', () => {
     })
     vi.mocked(recipeService.deleteRecipe).mockResolvedValue()
 
-    // Mock window.confirm
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    // Mock browser confirmation dialog to return true (user confirms)
+    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(true)
 
     render(<RecipesPage />)
 
@@ -237,20 +252,20 @@ describe('RecipesPage', () => {
       expect(screen.getByText('Pasta with Tomato Sauce')).toBeInTheDocument()
     })
 
-    // Click delete button
+    // Click delete button for first recipe
     const deleteButtons = screen.getAllByLabelText(/delete recipe/i)
     await user.click(deleteButtons[0])
 
-    // Confirm was called
+    // Verify confirmation dialog was shown with recipe name
     await waitFor(() => {
       expect(confirmSpy).toHaveBeenCalledWith(
         'Are you sure you want to delete "Pasta with Tomato Sauce"?'
       )
     })
 
-    // Delete mutation was called
+    // Verify delete service was called with correct recipe ID
     await waitFor(() => {
-      expect(recipeService.deleteRecipe).toHaveBeenCalled()
+      expect(recipeService.deleteRecipe).toHaveBeenCalledTimes(1)
     }, { timeout: 3000 })
 
     const callArgs = vi.mocked(recipeService.deleteRecipe).mock.calls[0]
@@ -259,15 +274,15 @@ describe('RecipesPage', () => {
     confirmSpy.mockRestore()
   })
 
-  it('does not delete recipe if confirmation is cancelled', async () => {
+  it('should not delete recipe and keep it in collection when user cancels deletion in confirmation dialog', async () => {
     const user = userEvent.setup()
     vi.mocked(recipeService.getRecipes).mockResolvedValue({
       data: mockRecipes,
       nextCursor: null,
     })
 
-    // Mock window.confirm to return false
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    // Mock browser confirmation dialog to return false (user cancels)
+    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(false)
 
     render(<RecipesPage />)
 
@@ -279,11 +294,16 @@ describe('RecipesPage', () => {
     const deleteButtons = screen.getAllByLabelText(/delete recipe/i)
     await user.click(deleteButtons[0])
 
+    // Verify confirmation dialog was shown
     await waitFor(() => {
-      expect(confirmSpy).toHaveBeenCalled()
+      expect(confirmSpy).toHaveBeenCalledTimes(1)
     })
 
+    // Verify delete service was NOT called because user cancelled
     expect(recipeService.deleteRecipe).not.toHaveBeenCalled()
+    
+    // Verify recipe is still visible on page
+    expect(screen.getByText('Pasta with Tomato Sauce')).toBeInTheDocument()
 
     confirmSpy.mockRestore()
   })
@@ -342,10 +362,11 @@ describe('RecipesPage', () => {
     })
   })
 
-  it('displays error when recipes fetch fails', async () => {
+  it('should display clear error message to user when recipe loading fails due to server error', async () => {
     const mockError: any = {
       isAxiosError: true,
       response: {
+        status: 500,
         data: {
           detail: 'Failed to fetch recipes',
         },
@@ -360,6 +381,10 @@ describe('RecipesPage', () => {
         screen.getByText(/Error loading recipes: Failed to fetch recipes/i)
       ).toBeInTheDocument()
     })
+    
+    // Verify recipes list is not shown when error occurs
+    expect(screen.queryByText('Pasta with Tomato Sauce')).not.toBeInTheDocument()
+    expect(screen.queryByText('Loading recipes...')).not.toBeInTheDocument()
   })
 
   it('allows adding multiple ingredients to a recipe', async () => {

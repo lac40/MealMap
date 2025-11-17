@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class
     }
 )
-@DisplayName("AuthController Integration Tests")
+@DisplayName("Authentication Controller API Endpoint Tests")
 @SuppressWarnings("null")
 class AuthControllerTest {
 
@@ -82,30 +82,35 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Should register user successfully")
-    void shouldRegisterUserSuccessfully() throws Exception {
-        // Given
+    @DisplayName("Should successfully register new user account and return 201 Created with user profile data")
+    void shouldSuccessfullyRegisterNewUserAccountAndReturn201CreatedWithUserProfileData() throws Exception {
+        // Given - valid registration request with email, password, and display name
         when(authService.register(any(RegisterRequest.class))).thenReturn(userDto);
 
-        // When & Then
+        // When - POST request is made to registration endpoint
+        // Then - new user is created and profile data is returned with 201 status
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.email").value("test@example.com"))
                 .andExpect(jsonPath("$.displayName").value("Test User"))
-                .andExpect(jsonPath("$.mfaEnabled").value(false));
+                .andExpect(jsonPath("$.mfaEnabled").value(false))
+                .andExpect(jsonPath("$.emailVerified").value(false))
+                .andExpect(jsonPath("$.createdAt").exists());
     }
 
     @Test
-    @DisplayName("Should return 400 when registration data is invalid")
-    void shouldReturn400WhenRegistrationDataIsInvalid() throws Exception {
-        // Given
+    @DisplayName("Should reject registration request and return 400 Bad Request when email format is invalid or password is too short")
+    void shouldRejectRegistrationRequestAndReturn400BadRequestWhenEmailFormatInvalidOrPasswordTooShort() throws Exception {
+        // Given - invalid registration data with malformed email and weak password
         RegisterRequest invalidRequest = new RegisterRequest();
         invalidRequest.setEmail("invalid-email");
         invalidRequest.setPassword("short");
 
-        // When & Then
+        // When - POST request is made with invalid data
+        // Then - request is rejected with 400 status and validation errors
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequest)))
@@ -113,29 +118,35 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Should login successfully")
-    void shouldLoginSuccessfully() throws Exception {
-        // Given
+    @DisplayName("Should authenticate user and return 200 OK with JWT access token when valid credentials are provided")
+    void shouldAuthenticateUserAndReturn200OkWithJwtAccessTokenWhenValidCredentialsProvided() throws Exception {
+        // Given - valid email and password credentials
         when(authService.login(any(LoginRequest.class))).thenReturn(loginResponse);
 
-        // When & Then
+        // When - POST request is made to login endpoint
+        // Then - user is authenticated and JWT token is issued with user data
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("jwt-token"))
+                .andExpect(jsonPath("$.accessToken").isString())
                 .andExpect(jsonPath("$.expiresIn").value(900))
+                .andExpect(jsonPath("$.expiresIn").isNumber())
+                .andExpect(jsonPath("$.user").exists())
+                .andExpect(jsonPath("$.user.id").exists())
                 .andExpect(jsonPath("$.user.email").value("test@example.com"));
     }
 
     @Test
-    @DisplayName("Should return 400 when login data is invalid")
-    void shouldReturn400WhenLoginDataIsInvalid() throws Exception {
-        // Given
+    @DisplayName("Should reject login attempt and return 400 Bad Request when email format is invalid or password is missing")
+    void shouldRejectLoginAttemptAndReturn400BadRequestWhenEmailFormatInvalidOrPasswordMissing() throws Exception {
+        // Given - invalid login request with malformed email and no password
         LoginRequest invalidRequest = new LoginRequest();
         invalidRequest.setEmail("invalid-email");
 
-        // When & Then
+        // When - POST request is made with invalid credentials
+        // Then - authentication is rejected with 400 status before reaching service layer
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequest)))
@@ -143,15 +154,21 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Should logout successfully")
-    void shouldLogoutSuccessfully() throws Exception {
+    @DisplayName("Should successfully log out authenticated user and return 204 No Content after revoking refresh token")
+    void shouldSuccessfullyLogOutAuthenticatedUserAndReturn204NoContentAfterRevokingRefreshToken() throws Exception {
+        // Given - user is authenticated with valid session
+        // When - POST request is made to logout endpoint
+        // Then - refresh token is revoked and 204 status is returned
         mockMvc.perform(post("/auth/logout"))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @DisplayName("Should refresh token successfully")
-    void shouldRefreshTokenSuccessfully() throws Exception {
+    @DisplayName("Should issue new access token and return 204 No Content when valid refresh token is provided")
+    void shouldIssueNewAccessTokenAndReturn204NoContentWhenValidRefreshTokenProvided() throws Exception {
+        // Given - user has valid refresh token in cookie
+        // When - POST request is made to refresh endpoint
+        // Then - new access token is issued and stored in cookie with 204 status
         mockMvc.perform(post("/auth/refresh"))
                 .andExpect(status().isNoContent());
     }

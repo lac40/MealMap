@@ -195,7 +195,7 @@ describe('IngredientsPage', () => {
     const defaultUnitSelect = screen.getByLabelText(/default unit/i)
     await user.selectOptions(defaultUnitSelect, 'g')
     
-    const amountInput = screen.getByLabelText(/package amount/i) as HTMLInputElement
+    const amountInput = screen.getByLabelText(/package amount/i)
     await user.clear(amountInput)
     await user.type(amountInput, '1')
     
@@ -324,8 +324,8 @@ describe('IngredientsPage', () => {
     })
     vi.mocked(ingredientService.deleteIngredient).mockResolvedValue()
 
-    // Mock window.confirm
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    // Mock globalThis.confirm
+    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(true)
 
     render(<IngredientsPage />)
 
@@ -363,8 +363,8 @@ describe('IngredientsPage', () => {
       nextCursor: null,
     })
 
-    // Mock window.confirm to return false
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    // Mock globalThis.confirm to return false
+    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(false)
 
     render(<IngredientsPage />)
 

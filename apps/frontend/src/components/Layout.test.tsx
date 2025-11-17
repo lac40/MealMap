@@ -99,8 +99,8 @@ describe('Layout', () => {
       'Grocery List'
     ]
     
-    navItems.forEach(item => {
+    for (const item of navItems) {
       expect(screen.getByText(item)).toBeInTheDocument()
-    })
+    }
   })
 })
