@@ -22,10 +22,10 @@ public class IngredientController {
 
     @GetMapping
     public ResponseEntity<IngredientPageResponse> getIngredients(
-            @RequestParam(required = false) Integer limit,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(required = false) String q,
-            @RequestParam(required = false) UUID categoryId) {
+            @RequestParam(name = "limit", required = false) Integer limit,
+            @RequestParam(name = "cursor", required = false) String cursor,
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(name = "categoryId", required = false) UUID categoryId) {
         IngredientPageResponse response = ingredientService.getIngredients(limit, cursor, q, categoryId);
         return ResponseEntity.ok(response);
     }

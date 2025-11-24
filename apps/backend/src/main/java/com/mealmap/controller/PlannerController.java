@@ -24,10 +24,10 @@ public class PlannerController {
 
     @GetMapping
     public ResponseEntity<PlannerWeekPageResponse> getPlannerWeeks(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(required = false) Integer limit,
-            @RequestParam(required = false) String cursor) {
+            @RequestParam(name = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "limit", required = false) Integer limit,
+            @RequestParam(name = "cursor", required = false) String cursor) {
         PlannerWeekPageResponse response = plannerService.getPlannersWeeks(from, to, limit, cursor);
         return ResponseEntity.ok(response);
     }

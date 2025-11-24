@@ -22,9 +22,9 @@ public class RecipeController {
 
     @GetMapping
     public ResponseEntity<RecipePageResponse> getRecipes(
-            @RequestParam(required = false) Integer limit,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(required = false) String q) {
+            @RequestParam(name = "limit", required = false) Integer limit,
+            @RequestParam(name = "cursor", required = false) String cursor,
+            @RequestParam(name = "q", required = false) String q) {
         RecipePageResponse response = recipeService.getRecipes(limit, cursor, q);
         return ResponseEntity.ok(response);
     }
