@@ -1,0 +1,322 @@
+name: CD - Deploy to Production
+
+on:
+  push:
+    branches: [ prod ]
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/mealmap
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      backend-tag: ${{ steps.meta-backend.outputs.tags }}
+      frontend-tag: ${{ steps.meta-frontend.outputs.tags }}
+      version: ${{ steps.version.outputs.version }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Generate version
+        id: version
+        run: |
+          VERSION=$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Generated version: $VERSION"
+      
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata for backend
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=latest
+      
+      - name: Extract metadata for frontend
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=latest
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/backend
+          file: ./apps/backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:latest
+          cache-to: type=inline
+      
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/frontend
+          file: ./apps/frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend:latest
+          cache-to: type=inline
+
+  deploy:
+    name: Deploy to Production
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: http://192.168.120.138
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Create deployment package
+        run: |
+          mkdir -p deployment
+          cp docker-compose.prod.yml deployment/docker-compose.yml
+          
+          # Create .env file from secrets
+          cat > deployment/.env << EOF
+          # Database Configuration
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          
+          # JWT Configuration
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          
+          # Spring Profile
+          SPRING_PROFILES_ACTIVE=prod
+          
+          # Frontend API URL
+          VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+          
+          # CORS Configuration
+          CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}
+          
+          # Docker Image Tags
+          BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:${{ needs.build-and-push.outputs.version }}
+          FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend:${{ needs.build-and-push.outputs.version }}
+          BACKEND_IMAGE_PREVIOUS=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:latest
+          FRONTEND_IMAGE_PREVIOUS=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend:latest
+          EOF
+      
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Backup current deployment
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            cd ~/mealmap || exit 0
+            if [ -f docker-compose.yml ]; then
+              # Save current version info
+              docker compose images --format json > deployment-backup.json 2>/dev/null || true
+              echo "Backup created"
+            fi
+          EOF
+      
+      - name: Transfer deployment files
+        run: |
+          scp -i ~/.ssh/deploy_key deployment/.env deployment/docker-compose.yml \
+            ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:~/mealmap/
+      
+      - name: Pull new images
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            cd ~/mealmap
+            source .env
+            
+            # Login to GitHub Container Registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            
+            # Pull new images
+            docker pull $BACKEND_IMAGE
+            docker pull $FRONTEND_IMAGE
+            
+            echo "Images pulled successfully"
+          EOF
+      
+      - name: Deploy application
+        id: deploy
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            cd ~/mealmap
+            
+            # Stop current containers
+            docker compose down
+            
+            # Start new containers
+            docker compose up -d
+            
+            echo "Deployment initiated"
+          EOF
+      
+      - name: Wait for services to start
+        run: sleep 30
+      
+      - name: Health check
+        id: health_check
+        run: |
+          MAX_ATTEMPTS=10
+          ATTEMPT=0
+          
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Health check attempt $ATTEMPT/$MAX_ATTEMPTS"
+            
+            # Check backend health
+            BACKEND_STATUS=$(ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
+              "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/v1/actuator/health" || echo "000")
+            
+            # Check frontend
+            FRONTEND_STATUS=$(ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
+              "curl -s -o /dev/null -w '%{http_code}' http://localhost:80" || echo "000")
+            
+            echo "Backend status: $BACKEND_STATUS"
+            echo "Frontend status: $FRONTEND_STATUS"
+            
+            if [ "$BACKEND_STATUS" = "200" ] && [ "$FRONTEND_STATUS" = "200" ]; then
+              echo "✅ Health check passed"
+              echo "healthy=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            
+            sleep 10
+          done
+          
+          echo "❌ Health check failed"
+          echo "healthy=false" >> $GITHUB_OUTPUT
+          exit 1
+      
+      - name: Rollback on failure
+        if: failure() && steps.health_check.outputs.healthy == 'false'
+        run: |
+          echo "⚠️ Deployment failed, initiating rollback..."
+          
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            cd ~/mealmap
+            
+            # Stop failed deployment
+            docker compose down
+            
+            # Update .env to use previous images
+            sed -i 's/BACKEND_IMAGE=.*$/BACKEND_IMAGE=${{ env.REGISTRY }}\/${{ env.IMAGE_PREFIX }}-backend:latest/' .env
+            sed -i 's/FRONTEND_IMAGE=.*$/FRONTEND_IMAGE=${{ env.REGISTRY }}\/${{ env.IMAGE_PREFIX }}-frontend:latest/' .env
+            
+            # Start with previous version
+            docker compose up -d
+            
+            echo "Rollback completed"
+          EOF
+          
+          # Wait and verify rollback
+          sleep 20
+          
+          BACKEND_STATUS=$(ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
+            "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/v1/actuator/health" || echo "000")
+          
+          if [ "$BACKEND_STATUS" = "200" ]; then
+            echo "✅ Rollback successful"
+          else
+            echo "❌ Rollback may have failed, manual intervention required"
+          fi
+      
+      - name: Verify deployment
+        if: success()
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            cd ~/mealmap
+            echo "=== Container Status ==="
+            docker compose ps
+            echo ""
+            echo "=== Backend Logs (last 20 lines) ==="
+            docker compose logs backend --tail=20
+          EOF
+      
+      - name: Send success notification
+        if: success()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "✅ MealMap Deployment Successful - v${{ needs.build-and-push.outputs.version }}"
+          to: kornislaci40@gmail.com
+          from: MealMap CI/CD <${{ secrets.EMAIL_USERNAME }}>
+          body: |
+            Deployment to production completed successfully!
+            
+            Version: ${{ needs.build-and-push.outputs.version }}
+            Environment: Production
+            URL: http://192.168.120.138
+            
+            Deployed Images:
+            - Backend: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:${{ needs.build-and-push.outputs.version }}
+            - Frontend: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend:${{ needs.build-and-push.outputs.version }}
+            
+            Triggered by: ${{ github.actor }}
+            Commit: ${{ github.sha }}
+            
+            View workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      
+      - name: Send failure notification
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "❌ MealMap Deployment Failed - v${{ needs.build-and-push.outputs.version }}"
+          to: kornislaci40@gmail.com
+          from: MealMap CI/CD <${{ secrets.EMAIL_USERNAME }}>
+          body: |
+            Deployment to production failed!
+            
+            Version: ${{ needs.build-and-push.outputs.version }}
+            Environment: Production
+            
+            ${{ steps.health_check.outputs.healthy == 'false' && 'Automatic rollback was initiated.' || 'Check logs for details.' }}
+            
+            Triggered by: ${{ github.actor }}
+            Commit: ${{ github.sha }}
+            
+            View workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            Please check the logs and take necessary action.
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf ~/.ssh/deploy_key deployment/
