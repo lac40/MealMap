@@ -33,7 +33,16 @@ class AccountControllerSecurityTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private AccountService accountService; // mocked business service (methods not invoked when unauthorized)
+    private AccountService accountService;
+
+    @MockBean
+    private com.mealmap.service.AuthService authService;
+
+    @MockBean
+    private com.mealmap.service.EmailService emailService;
+
+    @MockBean
+    private com.mealmap.repository.UserRepository userRepository;
 
     @Test
     @DisplayName("GET /api/account without auth should return 401 or 403")
