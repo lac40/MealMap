@@ -136,16 +136,39 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
       
-      - name: Backup current deployment
+      - name: Backup current deployment and database
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOFBACKUP'
             cd ~/mealmap || exit 0
             if [ -f docker-compose.yml ]; then
+              # Create backups directory
+              mkdir -p backups
+              
+              # Generate timestamp for backup
+              BACKUP_TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+              
               # Save current version info
               docker compose images --format json > deployment-backup.json 2>/dev/null || true
-              echo "Backup created"
+              
+              # Backup database
+              echo "📦 Creating database backup..."
+              docker compose exec -T mssql /opt/mssql-tools18/bin/sqlcmd \
+                -S localhost -U sa -P "${{ secrets.DB_PASSWORD }}" -C \
+                -Q "BACKUP DATABASE [${{ secrets.DB_NAME }}] TO DISK = '/var/opt/mssql/backup/mealmap-${BACKUP_TIMESTAMP}.bak' WITH FORMAT, INIT" 2>/dev/null || echo "⚠️  Database backup failed (may not exist yet)"
+              
+              # Copy backup from container to host
+              docker cp mealmap-sqlserver:/var/opt/mssql/backup/mealmap-${BACKUP_TIMESTAMP}.bak backups/ 2>/dev/null || true
+              
+              # Keep only last 2 backups
+              cd backups
+              ls -t mealmap-*.bak 2>/dev/null | tail -n +3 | xargs -r rm
+              cd ..
+              
+              echo "✅ Backup completed: mealmap-${BACKUP_TIMESTAMP}.bak"
+              echo "📊 Current backups:"
+              ls -lh backups/mealmap-*.bak 2>/dev/null | awk '{print $9, $5}' || echo "No previous backups"
             fi
-          EOF
+          EOFBACKUP
       
       - name: Transfer deployment files
         run: |
