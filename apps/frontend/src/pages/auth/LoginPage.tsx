@@ -79,6 +79,7 @@ const LoginPage = () => {
                 disabled={loginMutation.isPending}
                 {...register('email')}
                 autoComplete="email"
+                tabIndex={0}
               />
 
               {/* Password Field */}
@@ -91,13 +92,15 @@ const LoginPage = () => {
                   disabled={loginMutation.isPending}
                   {...register('password')}
                   autoComplete="current-password"
+                  tabIndex={0}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-ink-700 hover:text-ink-900 focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded p-1"
+                  className="absolute right-3 top-9 text-ink-700 hover:text-ink-900 dark:text-ink-300 dark:hover:text-ink-100 focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded p-1"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   disabled={loginMutation.isPending}
+                  tabIndex={-1}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -111,7 +114,8 @@ const LoginPage = () => {
               <div className="flex justify-end">
                 <Link
                   to="/forgot-password"
-                  className="text-sm text-secondary-600 hover:text-secondary-700 focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded"
+                  className="text-sm text-secondary-600 hover:text-secondary-700 dark:text-secondary-500 dark:hover:text-secondary-400 focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded"
+                  tabIndex={0}
                 >
                   Forgot password?
                 </Link>
@@ -123,6 +127,7 @@ const LoginPage = () => {
                 className="w-full"
                 isLoading={loginMutation.isPending}
                 disabled={loginMutation.isPending}
+                tabIndex={0}
               >
                 Sign In
               </Button>

@@ -40,7 +40,7 @@ export type LoginFormData = z.infer<typeof loginSchema>
 /**
  * Register form validation schema
  * 
- * Validates new user registration with password confirmation
+ * Validates new user registration with password confirmation and terms acceptance
  */
 export const registerSchema = z.object({
   displayName: z
@@ -61,6 +61,11 @@ export const registerSchema = z.object({
   confirmPassword: z
     .string()
     .min(1, 'Please confirm your password'),
+  acceptTerms: z
+    .boolean()
+    .refine((val) => val === true, {
+      message: 'You must accept the Terms of Use and Privacy Policy',
+    }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],  // Attach error to confirmPassword field

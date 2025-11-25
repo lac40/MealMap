@@ -7,6 +7,7 @@ import { AlertCircle, Eye, EyeOff, CheckCircle } from 'lucide-react'
 import { register as registerService } from '@/services/auth.service'
 import { registerSchema, type RegisterFormData } from '@/lib/validation'
 import { getErrorMessage } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -39,7 +40,8 @@ const RegisterPage = () => {
 
   const onSubmit = (data: RegisterFormData) => {
     setServerError(null)
-    const { confirmPassword, ...registerData } = data
+    // Remove fields not needed by backend
+    const { confirmPassword, acceptTerms, ...registerData } = data
     registerMutation.mutate(registerData)
   }
 
@@ -103,6 +105,7 @@ const RegisterPage = () => {
                 disabled={registerMutation.isPending}
                 {...register('displayName')}
                 autoComplete="name"
+                tabIndex={0}
               />
 
               {/* Email Field */}
@@ -114,6 +117,7 @@ const RegisterPage = () => {
                 disabled={registerMutation.isPending}
                 {...register('email')}
                 autoComplete="email"
+                tabIndex={0}
               />
 
               {/* Password Field */}
@@ -127,13 +131,15 @@ const RegisterPage = () => {
                   disabled={registerMutation.isPending}
                   {...register('password')}
                   autoComplete="new-password"
+                  tabIndex={0}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-ink-700 hover:text-ink-900 focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded p-1"
+                  className="absolute right-3 top-9 text-ink-700 hover:text-ink-900 dark:text-ink-300 dark:hover:text-ink-100 focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded p-1"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   disabled={registerMutation.isPending}
+                  tabIndex={-1}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -153,13 +159,15 @@ const RegisterPage = () => {
                   disabled={registerMutation.isPending}
                   {...register('confirmPassword')}
                   autoComplete="new-password"
+                  tabIndex={0}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-9 text-ink-700 hover:text-ink-900 focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded p-1"
+                  className="absolute right-3 top-9 text-ink-700 hover:text-ink-900 dark:text-ink-300 dark:hover:text-ink-100 focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded p-1"
                   aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                   disabled={registerMutation.isPending}
+                  tabIndex={-1}
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -169,12 +177,66 @@ const RegisterPage = () => {
                 </button>
               </div>
 
+              {/* Terms Acceptance Checkbox */}
+              <div className="space-y-2">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="acceptTerms"
+                    className={cn(
+                      'mt-1 h-4 w-4 rounded border-divider-200 text-primary-600',
+                      'focus:ring-2 focus:ring-primary-600 focus:ring-offset-2',
+                      'disabled:cursor-not-allowed disabled:opacity-50',
+                      'transition-colors cursor-pointer',
+                      errors.acceptTerms && 'border-danger-600'
+                    )}
+                    disabled={registerMutation.isPending}
+                    {...register('acceptTerms')}
+                    tabIndex={0}
+                  />
+                  <label
+                    htmlFor="acceptTerms"
+                    className={cn(
+                      'text-sm text-muted-foreground cursor-pointer',
+                      errors.acceptTerms && 'text-danger-600'
+                    )}
+                  >
+                    I agree to the{' '}
+                    <Link
+                      to="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary-600 hover:text-primary-700 dark:text-primary-500 dark:hover:text-primary-400 underline font-medium"
+                      tabIndex={0}
+                    >
+                      Terms of Use
+                    </Link>
+                    {' '}and{' '}
+                    <Link
+                      to="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary-600 hover:text-primary-700 dark:text-primary-500 dark:hover:text-primary-400 underline font-medium"
+                      tabIndex={0}
+                    >
+                      Privacy Policy
+                    </Link>
+                  </label>
+                </div>
+                {errors.acceptTerms && (
+                  <p className="text-sm text-danger-600" role="alert">
+                    {errors.acceptTerms.message}
+                  </p>
+                )}
+              </div>
+
               {/* Submit Button */}
               <Button
                 type="submit"
                 className="w-full"
                 isLoading={registerMutation.isPending}
                 disabled={registerMutation.isPending}
+                tabIndex={0}
               >
                 Create Account
               </Button>

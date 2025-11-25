@@ -9,6 +9,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import Layout from './components/Layout'
+import ToastProvider from './components/ToastProvider'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
@@ -17,19 +18,30 @@ import RecipesPage from './pages/RecipesPage'
 import PlannerPage from './pages/PlannerPage'
 import PantryPage from './pages/PantryPage'
 import GroceryPage from './pages/GroceryPage'
+import AccountPage from './pages/AccountPage'
+import TermsPage from './pages/legal/TermsPage'
+import PrivacyPage from './pages/legal/PrivacyPage'
 
 function App() {
   // Get authentication status from the global auth store
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
   return (
-    <Routes>
+    <>
+      <ToastProvider />
+      <Routes>
       {/* 
         Public Routes - Authentication Pages
         Redirect to dashboard if user is already logged in
       */}
       <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" />} />
       <Route path="/register" element={!isAuthenticated ? <RegisterPage /> : <Navigate to="/" />} />
+      
+      {/* 
+        Legal Pages - Accessible to everyone
+      */}
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
 
       {/* 
         Protected Routes - Main Application Features
@@ -43,6 +55,7 @@ function App() {
         <Route path="/planner" element={<PlannerPage />} />
         <Route path="/pantry" element={<PantryPage />} />
         <Route path="/grocery" element={<GroceryPage />} />
+        <Route path="/account" element={<AccountPage />} />
       </Route>
 
       {/* 
@@ -50,7 +63,8 @@ function App() {
         Redirects any unknown paths to the home page
       */}
       <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+      </Routes>
+    </>
   )
 }
 
