@@ -1,9 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { screen, fireEvent } from '@testing-library/react'
 import { render } from '@/test/utils'
 import AccountPage from './AccountPage'
-import { useAuthStore } from '@/store/authStore'
-import { useThemeStore } from '@/store/themeStore'
 
 // Mock stores
 vi.mock('@/store/authStore', () => ({
