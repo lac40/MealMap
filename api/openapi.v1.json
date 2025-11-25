@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "MealMap API",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "summary": "Meal planning, grocery computation, collaboration, and optional AI helpers.",
     "description": "Versioned REST API with WebSocket/SSE realtime channels. User-scoped ingredients, global seeded categories, planner with configurable slots (breakfast, snackAM, lunch, snackPM, dinner), grocery computation with simple unit conversion, N-trip splitting, templates, exports, notifications, sharing, and optional features (nutrition, import, optimizer, normalization, substitutions, barcode, OCR).",
     "termsOfService": "https://api.mealmap.app/terms",
@@ -14,7 +14,7 @@
     { "url": "https://staging.api.mealmap.app/v1", "description": "Staging" }
   ],
   "tags": [
-    { "name": "Auth" }, { "name": "Profiles" }, { "name": "Households" },
+    { "name": "Auth" }, { "name": "Account" }, { "name": "Profiles" }, { "name": "Households" },
     { "name": "Ingredients" }, { "name": "Categories" }, { "name": "Recipes" },
     { "name": "Planner" }, { "name": "Pantry" }, { "name": "Grocery" },
     { "name": "Templates" }, { "name": "Exports" }, { "name": "Sharing" },
@@ -467,6 +467,164 @@
         "parameters": [{ "$ref": "#/components/parameters/timezoneHeader" }],
         "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } } },
         "security": [{ "bearerAuth": [] }]
+      }
+    },
+
+    "/account": {
+      "get": {
+        "tags": ["Account"],
+        "summary": "Get current user account details",
+        "description": "Retrieve authenticated user's account information",
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } },
+          "401": { "$ref": "#/components/responses/Problem" }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "delete": {
+        "tags": ["Account"],
+        "summary": "Delete user account",
+        "description": "Permanently delete the authenticated user's account and all associated data. A confirmation email will be sent.",
+        "responses": {
+          "204": { "$ref": "#/components/responses/NoContent" },
+          "401": { "$ref": "#/components/responses/Problem" }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/account/profile": {
+      "put": {
+        "tags": ["Account"],
+        "summary": "Update user profile",
+        "description": "Update display name and/or email. Changing email will reset emailVerified status.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "displayName": { "type": "string", "minLength": 1, "maxLength": 100 },
+                  "email": { "type": "string", "format": "email" }
+                },
+                "required": ["displayName", "email"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Profile updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } },
+          "400": { "$ref": "#/components/responses/Problem" },
+          "401": { "$ref": "#/components/responses/Problem" }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/account/password": {
+      "put": {
+        "tags": ["Account"],
+        "summary": "Change password",
+        "description": "Change user password. Requires current password for verification.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "currentPassword": { "type": "string" },
+                  "newPassword": { "type": "string", "minLength": 8, "pattern": "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&]{8,}$" }
+                },
+                "required": ["currentPassword", "newPassword"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "$ref": "#/components/responses/NoContent" },
+          "400": { "$ref": "#/components/responses/Problem" },
+          "401": { "$ref": "#/components/responses/Problem" }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/account/preferences": {
+      "put": {
+        "tags": ["Account"],
+        "summary": "Update user preferences",
+        "description": "Update user preferences such as theme selection",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "themePreference": { "type": "string", "enum": ["light", "dark", "system"], "default": "system" }
+                },
+                "required": ["themePreference"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "$ref": "#/components/responses/NoContent" },
+          "400": { "$ref": "#/components/responses/Problem" },
+          "401": { "$ref": "#/components/responses/Problem" }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/account/forgot-password": {
+      "post": {
+        "tags": ["Account"],
+        "summary": "Request password reset",
+        "description": "Initiate password reset flow. If email exists, a reset link will be sent. Always returns 200 to prevent email enumeration.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "format": "email" }
+                },
+                "required": ["email"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Request processed. Check email if account exists." }
+        },
+        "security": []
+      }
+    },
+    "/account/reset-password": {
+      "post": {
+        "tags": ["Account"],
+        "summary": "Reset password with token",
+        "description": "Complete password reset using token from email. Token expires after 1 hour.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": { "type": "string" },
+                  "newPassword": { "type": "string", "minLength": 8, "pattern": "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&]{8,}$" }
+                },
+                "required": ["token", "newPassword"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "$ref": "#/components/responses/NoContent" },
+          "400": { "$ref": "#/components/responses/Problem" }
+        },
+        "security": []
       }
     },
 

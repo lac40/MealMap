@@ -128,6 +128,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText(/email/i), 'test@example.com')
     await user.type(screen.getByLabelText(/^password$/i), 'Password123')
     await user.type(screen.getByLabelText(/confirm password/i), 'Password123')
+    await user.click(screen.getByRole('checkbox', { name: /i agree to the/i }))
     await user.click(screen.getByRole('button', { name: /create account/i }))
     
     await waitFor(() => {
@@ -159,6 +160,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText(/email/i), 'test@example.com')
     await user.type(screen.getByLabelText(/^password$/i), 'Password123')
     await user.type(screen.getByLabelText(/confirm password/i), 'Password123')
+    await user.click(screen.getByRole('checkbox', { name: /i agree to the/i }))
     await user.click(screen.getByRole('button', { name: /create account/i }))
     
     await waitFor(() => {
@@ -195,6 +197,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText(/email/i), 'existing@example.com')
     await user.type(screen.getByLabelText(/^password$/i), 'Password123')
     await user.type(screen.getByLabelText(/confirm password/i), 'Password123')
+    await user.click(screen.getByRole('checkbox', { name: /i agree to the/i }))
     await user.click(screen.getByRole('button', { name: /create account/i }))
     
     await waitFor(() => {
@@ -215,6 +218,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText(/email/i), 'test@example.com')
     await user.type(screen.getByLabelText(/^password$/i), 'Password123')
     await user.type(screen.getByLabelText(/confirm password/i), 'Password123')
+    await user.click(screen.getByRole('checkbox', { name: /i agree to the/i }))
     
     const submitButton = screen.getByRole('button', { name: /create account/i })
     await user.click(submitButton)
@@ -261,6 +265,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText(/email/i), 'test@example.com')
     await user.type(screen.getByLabelText(/^password$/i), 'Password123')
     await user.type(screen.getByLabelText(/confirm password/i), 'Password123')
+    await user.click(screen.getByRole('checkbox', { name: /i agree to the/i }))
     await user.click(screen.getByRole('button', { name: /create account/i }))
     
     await waitFor(() => {

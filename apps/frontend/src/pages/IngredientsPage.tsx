@@ -25,8 +25,7 @@ import type { Ingredient } from '@/types/api'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import Chip from '@/components/ui/Chip'
+
 
 const IngredientsPage = () => {
   const queryClient = useQueryClient()
@@ -181,157 +180,156 @@ const IngredientsPage = () => {
   const isSaving = createMutation.isPending || updateMutation.isPending
 
   return (
-    <div className="min-h-screen bg-surface-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-ink-900 mb-2">Ingredients</h1>
-          <p className="text-ink-700">Manage your ingredient library</p>
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold text-ink-900 dark:text-ink-50">Ingredients</h1>
+        <p className="text-ink-600 dark:text-ink-400">Manage your ingredient library</p>
+      </div>
 
-        {/* Search and Filter Bar */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              {/* Search */}
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-700" />
-                  <input
-                    type="text"
-                    placeholder="Search ingredients..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-11 pl-10 pr-4 rounded-button border border-divider-200 focus:outline-none focus:ring-2 focus:ring-secondary-600"
-                  />
-                </div>
-              </div>
-
-              {/* Category Filter */}
-              <div className="md:w-64">
-                <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-700 z-10 pointer-events-none" />
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full h-11 pl-10 pr-10 rounded-button border border-divider-200 appearance-none focus:outline-none focus:ring-2 focus:ring-secondary-600"
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Add Button */}
-              <Button
-                onClick={() => handleOpenForm()}
-                leftIcon={<Plus className="h-5 w-5" />}
-              >
-                Add Ingredient
-              </Button>
+      {/* Search and Filter Bar */}
+      <div className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-md p-4 border border-surface-200 dark:border-ink-700">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-400 dark:text-ink-500" />
+              <input
+                type="text"
+                placeholder="Search ingredients..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-11 pl-10 pr-4 rounded-lg border border-surface-300 dark:border-ink-600 bg-surface-50 dark:bg-ink-900 text-ink-900 dark:text-ink-50 placeholder-ink-400 dark:placeholder-ink-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 transition-colors"
+              />
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Ingredients List */}
-        {isLoading ? (
-          <div className="text-center py-12">
-            <p className="text-ink-700">Loading ingredients...</p>
+          {/* Category Filter */}
+          <div className="md:w-64">
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-400 dark:text-ink-500 z-10 pointer-events-none" />
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full h-11 pl-10 pr-10 rounded-lg border border-surface-300 dark:border-ink-600 bg-surface-50 dark:bg-ink-900 text-ink-900 dark:text-ink-50 appearance-none focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 transition-colors cursor-pointer"
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        ) : ingredientsError ? (
-          <Card>
-            <CardContent className="p-6 text-center text-danger-600">
-              Error loading ingredients: {getErrorMessage(ingredientsError)}
-            </CardContent>
-          </Card>
-        ) : ingredients.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Package className="h-12 w-12 mx-auto mb-4 text-ink-700 opacity-50" />
-              <p className="text-ink-700 mb-4">
-                {searchQuery || selectedCategory
-                  ? 'No ingredients found matching your filters'
-                  : 'No ingredients yet'}
-              </p>
-              <Button onClick={() => handleOpenForm()}>Add Your First Ingredient</Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {ingredients.map((ingredient) => (
-              <Card key={ingredient.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{ingredient.name}</CardTitle>
-                      <Chip variant="info" className="mt-2">
-                        {getCategoryName(ingredient.categoryId)}
-                      </Chip>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleOpenForm(ingredient)}
-                        className="p-2 text-ink-700 hover:text-secondary-600 rounded focus:outline-none focus:ring-2 focus:ring-secondary-600"
-                        aria-label="Edit ingredient"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(ingredient.id)}
-                        className="p-2 text-ink-700 hover:text-danger-600 rounded focus:outline-none focus:ring-2 focus:ring-danger-600"
-                        aria-label="Delete ingredient"
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm text-ink-700">
-                    <div>
-                      <span className="font-medium">Default Unit:</span>{' '}
-                      {ingredient.defaultUnit}
-                    </div>
-                    <div>
-                      <span className="font-medium">Package Size:</span>{' '}
-                      {ingredient.packageSize.amount} {ingredient.packageSize.unit}
-                    </div>
-                    {ingredient.notes && (
-                      <div>
-                        <span className="font-medium">Notes:</span>{' '}
-                        <span className="text-ink-700">{ingredient.notes}</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+
+          {/* Add Button */}
+          <Button
+            onClick={() => handleOpenForm()}
+            leftIcon={<Plus className="h-5 w-5" />}
+          >
+            Add Ingredient
+          </Button>
+        </div>
+      </div>
+
+      {/* Ingredients List */}
+      {isLoading ? (
+        <div className="text-center py-12">
+          <div className="inline-flex items-center gap-3 text-ink-600 dark:text-ink-400">
+            <div className="w-5 h-5 border-2 border-primary-600 dark:border-primary-400 border-t-transparent rounded-full animate-spin" />
+            <p>Loading ingredients...</p>
           </div>
-        )}
+        </div>
+      ) : ingredientsError ? (
+        <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-6 text-center border border-red-200 dark:border-red-800">
+          <p className="text-red-600 dark:text-red-400">
+            Error loading ingredients: {getErrorMessage(ingredientsError)}
+          </p>
+        </div>
+      ) : ingredients.length === 0 ? (
+        <div className="bg-surface-50 dark:bg-ink-800 rounded-2xl p-12 text-center border border-surface-200 dark:border-ink-700">
+          <Package className="h-12 w-12 mx-auto mb-4 text-ink-400 dark:text-ink-500 opacity-50" />
+          <p className="text-ink-700 dark:text-ink-300 mb-4">
+            {searchQuery || selectedCategory
+              ? 'No ingredients found matching your filters'
+              : 'No ingredients yet'}
+          </p>
+          <Button onClick={() => handleOpenForm()}>Add Your First Ingredient</Button>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {ingredients.map((ingredient) => (
+            <div
+              key={ingredient.id}
+              className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border border-surface-200 dark:border-ink-700 hover:border-primary-300 dark:hover:border-primary-600"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-ink-900 dark:text-ink-50 mb-2">
+                    {ingredient.name}
+                  </h3>
+                  <span className="inline-block px-3 py-1 text-sm font-medium rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                    {getCategoryName(ingredient.categoryId)}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleOpenForm(ingredient)}
+                    className="p-2 text-ink-600 dark:text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg hover:bg-surface-100 dark:hover:bg-ink-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    aria-label="Edit ingredient"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(ingredient.id)}
+                    className="p-2 text-ink-600 dark:text-ink-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-surface-100 dark:hover:bg-ink-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                    aria-label="Delete ingredient"
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm text-ink-600 dark:text-ink-400">
+                <div>
+                  <span className="font-medium text-ink-700 dark:text-ink-300">Default Unit:</span>{' '}
+                  {ingredient.defaultUnit}
+                </div>
+                <div>
+                  <span className="font-medium text-ink-700 dark:text-ink-300">Package Size:</span>{' '}
+                  {ingredient.packageSize.amount} {ingredient.packageSize.unit}
+                </div>
+                {ingredient.notes && (
+                  <div>
+                    <span className="font-medium text-ink-700 dark:text-ink-300">Notes:</span>{' '}
+                    <span>{ingredient.notes}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
         {/* Form Modal */}
         {isFormOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-black bg-opacity-60 dark:bg-opacity-80 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
             onClick={handleCloseForm}
           >
             <div
-              className="bg-white rounded-card shadow-elevated max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-surface-200 dark:border-ink-700"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-ink-900">
+                  <h2 className="text-2xl font-bold text-ink-900 dark:text-ink-50">
                     {editingIngredient ? 'Edit Ingredient' : 'Add Ingredient'}
                   </h2>
                   <button
                     onClick={handleCloseForm}
-                    className="p-2 text-ink-700 hover:text-ink-900 rounded focus:outline-none focus:ring-2 focus:ring-secondary-600"
+                    className="p-2 text-ink-600 dark:text-ink-400 hover:text-ink-900 dark:hover:text-ink-50 rounded-lg hover:bg-surface-100 dark:hover:bg-ink-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
                     aria-label="Close"
                   >
                     <X className="h-6 w-6" />
@@ -340,7 +338,7 @@ const IngredientsPage = () => {
 
                 {serverError && (
                   <div
-                    className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-danger-600"
+                    className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400"
                     role="alert"
                   >
                     {serverError}
@@ -417,30 +415,29 @@ const IngredientsPage = () => {
                     {...register('notes')}
                   />
 
-                  <div className="flex gap-3 pt-4">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={handleCloseForm}
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      isLoading={isSaving}
-                      disabled={isSaving}
-                      className="flex-1"
-                    >
-                      {editingIngredient ? 'Update' : 'Create'} Ingredient
-                    </Button>
-                  </div>
-                </form>
-              </div>
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleCloseForm}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    isLoading={isSaving}
+                    disabled={isSaving}
+                    className="flex-1"
+                  >
+                    {editingIngredient ? 'Update' : 'Create'} Ingredient
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -33,6 +33,8 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final AccountService accountService;
+    private final EmailService emailService;
 
     @Value("${jwt.expiration}")
     private long accessTokenTtl;
@@ -54,13 +56,21 @@ public class AuthService {
                 .displayName(request.getDisplayName())
                 .mfaEnabled(false)
                 .emailVerified(false)
+                .themePreference("system")
                 .build();
         
         User savedUser = userRepository.save(user);
+        
+        // Record terms acceptance
+        accountService.recordTermsAcceptance(savedUser.getId());
+        
+        // Send welcome email
+        emailService.sendWelcomeEmail(savedUser.getEmail(), savedUser.getDisplayName());
+        
         return mapToDto(savedUser);
     }
     
-    @Transactional(readOnly = true)
+    @Transactional
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
@@ -68,6 +78,9 @@ public class AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new BadCredentialsException("Invalid credentials");
         }
+        
+        // Update last login timestamp
+        accountService.updateLastLogin(user.getId());
         
         UserDetails userDetails = new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
