@@ -12,7 +12,10 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the application
+# Build argument for API URL
+ARG VITE_API_BASE_URL=http://localhost:8080/v1
+
+# Build the application with the API URL
 RUN npm run build
 
 # Runtime stage with nginx

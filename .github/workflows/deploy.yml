@@ -81,6 +81,8 @@ jobs:
           labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend:latest
           cache-to: type=inline
+          build-args: |
+            VITE_API_BASE_URL=http://192.168.120.138:8080/v1
 
   deploy:
     name: Deploy to Production
