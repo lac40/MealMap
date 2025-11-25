@@ -48,4 +48,20 @@ public class User {
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
+
+    @Column(name = "terms_accepted_at")
+    private Instant termsAcceptedAt;
+
+    @Column(name = "password_reset_token")
+    private String passwordResetToken;
+
+    @Column(name = "password_reset_expiry")
+    private Instant passwordResetExpiry;
+
+    @Column(name = "theme_preference", length = 10)
+    @Builder.Default
+    private String themePreference = "system";
+
+    @Column(name = "last_login_at")
+    private Instant lastLoginAt;
 }

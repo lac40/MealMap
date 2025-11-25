@@ -2,99 +2,123 @@
  * Layout Component
  * 
  * Main application layout wrapper that provides:
- * - Top navigation header with app branding and user info
- * - Sidebar navigation menu with all main app sections
+ * - Collapsible sidebar navigation (desktop) / Hamburger menu (mobile)
+ * - Top header with user menu and theme toggle
  * - Content area where child routes are rendered
+ * - Responsive design for mobile, tablet, and desktop
  * 
  * This component wraps all protected routes in the application.
  */
 
-import { Outlet, Link } from 'react-router-dom'
-import { useAuthStore } from '../store/authStore'
-import { Home, Package, BookOpen, Calendar, ShoppingCart, LogOut } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Outlet } from 'react-router-dom'
+import Sidebar from './Sidebar'
+import Header from './Header'
+import { cn } from '@/lib/utils'
 
 const Layout = () => {
-  // Get current user data and logout function from auth store
-  const { user, logout } = useAuthStore()
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    // Load collapsed state from localStorage
+    const saved = localStorage.getItem('mealmap-sidebar-collapsed')
+    return saved ? JSON.parse(saved) : false
+  })
+  
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
+
+  // Handle window resize to detect mobile/desktop
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024
+      setIsMobile(mobile)
+      
+      // Close mobile menu when switching to desktop
+      if (!mobile) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Save collapsed state to localStorage
+  useEffect(() => {
+    localStorage.setItem('mealmap-sidebar-collapsed', JSON.stringify(isSidebarCollapsed))
+  }, [isSidebarCollapsed])
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+  }, [])
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed)
+  }
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen)
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header - Top navigation bar */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* App branding */}
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-primary-600">MealMap</h1>
-            </div>
-            
-            {/* User info and logout */}
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-700">{user?.displayName}</span>
-              <button
-                onClick={logout}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900"
-              >
-                <LogOut size={16} />
-                Logout
-              </button>
-            </div>
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar - Responsive */}
+      <Sidebar
+        isCollapsed={isSidebarCollapsed}
+        isMobileOpen={isMobileMenuOpen}
+        onToggleCollapse={toggleSidebarCollapse}
+        onToggleMobile={toggleMobileMenu}
+        isMobile={isMobile}
+      />
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <Header onMobileMenuToggle={toggleMobileMenu} isMobile={isMobile} />
+
+        {/* Page Content */}
+        <main 
+          className={cn(
+            "flex-1 p-4 sm:p-6 lg:p-8",
+            "overflow-auto"
+          )}
+        >
+          <div className="max-w-7xl mx-auto">
+            <Outlet />
           </div>
-        </div>
-      </header>
-
-      <div className="flex">
-        {/* Sidebar - Navigation menu */}
-        <aside className="w-64 bg-white shadow-sm min-h-[calc(100vh-4rem)]">
-          <nav className="p-4 space-y-2">
-            <NavLink to="/" icon={<Home size={20} />}>
-              Dashboard
-            </NavLink>
-            <NavLink to="/ingredients" icon={<Package size={20} />}>
-              Ingredients
-            </NavLink>
-            <NavLink to="/recipes" icon={<BookOpen size={20} />}>
-              Recipes
-            </NavLink>
-            <NavLink to="/planner" icon={<Calendar size={20} />}>
-              Planner
-            </NavLink>
-            <NavLink to="/pantry" icon={<Package size={20} />}>
-              Pantry
-            </NavLink>
-            <NavLink to="/grocery" icon={<ShoppingCart size={20} />}>
-              Grocery List
-            </NavLink>
-          </nav>
-        </aside>
-
-        {/* Main content area - Renders child routes via Outlet */}
-        <main className="flex-1 p-8">
-          <Outlet />
         </main>
+
+        {/* Footer - University Project Notice */}
+        <footer className="border-t border-border bg-card px-4 py-3">
+          <div className="max-w-7xl mx-auto">
+            <p className="text-xs text-muted-foreground text-center">
+              MealMap is a university project created for Fontys S3 Individual Project by Laszlo Kornis.
+              {' '}
+              <a 
+                href="/terms" 
+                className="text-primary-600 hover:text-primary-700 dark:text-primary-500 dark:hover:text-primary-400"
+              >
+                Terms of Use
+              </a>
+              {' · '}
+              <a 
+                href="/privacy" 
+                className="text-primary-600 hover:text-primary-700 dark:text-primary-500 dark:hover:text-primary-400"
+              >
+                Privacy Policy
+              </a>
+              {' · '}
+              <a 
+                href="mailto:l.kornis@student.fontys.nl" 
+                className="text-primary-600 hover:text-primary-700 dark:text-primary-500 dark:hover:text-primary-400"
+              >
+                Contact
+              </a>
+            </p>
+          </div>
+        </footer>
       </div>
     </div>
-  )
-}
-
-/**
- * NavLink Component
- * 
- * Reusable navigation link with icon support
- * 
- * @param to - Route path to navigate to
- * @param icon - Icon element to display before the text
- * @param children - Link text content
- */
-const NavLink = ({ to, icon, children }: { to: string; icon: React.ReactNode; children: React.ReactNode }) => {
-  return (
-    <Link
-      to={to}
-      className="flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-primary-50 hover:text-primary-700 transition-colors"
-    >
-      {icon}
-      <span>{children}</span>
-    </Link>
   )
 }
 
