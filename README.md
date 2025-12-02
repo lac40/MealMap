@@ -23,47 +23,70 @@ MealMap/
 ## Features
 
 ### Core Features
-- **User Authentication** - JWT-based secure authentication
-- **Ingredient Management** - Create and manage user-scoped ingredients
-- **Recipe Management** - Build recipes with ingredients and external links
-- **Weekly Meal Planner** - Plan meals across configurable time slots
-- **Pantry Tracking** - Track what you have at home
-- **Smart Grocery Lists** - Auto-generate shopping lists from meal plans
-- **Multi-trip Planning** - Split grocery shopping across multiple trips
-- **Household Collaboration** - Share plans with household members
+
+- **User Authentication** - JWT-based secure authentication with access/refresh tokens
+- **Account Management** - Profile updates, password changes, theme preferences, account deletion, and password reset via email
+- **Ingredient Management** - Create and manage user-scoped ingredients with categories and units
+- **Recipe Management** - Build recipes with ingredients, servings, and external links
+- **Weekly Meal Planner** - Plan meals across dates and time slots with drag-and-drop interface
+- **Pantry Tracking** - Track inventory with quantities and expiration dates
+- **Smart Grocery Lists** - Auto-generate shopping lists from meal plans with pantry deduction
+- **Multi-trip Planning** - Split grocery shopping across multiple trips with date ranges
+- **Dashboard** - Overview statistics showing ingredient, recipe, pantry, and meal counts
 - **Export** - Export grocery lists as CSV/PDF
+- **Theme Support** - Dark/light/system theme preferences with persistent storage
 
 ### Optional Features (Future)
-- Nutrition hints
-- Recipe import from URLs
-- Meal plan optimizer
-- Unit conversion & normalization
-- Ingredient substitutions
-- Barcode lookup
-- Receipt OCR
+
+- Nutrition tracking and hints
+- Recipe import from URLs with parsing
+- AI-powered meal plan optimizer
+- Automatic unit conversion & normalization
+- Intelligent ingredient substitutions
+- Barcode scanning for ingredient lookup
+- Receipt OCR for pantry updates
+- Household collaboration features (partially implemented database schema)
 
 ## Tech Stack
 
 ### Backend
+
 - **Language**: Java 21
-- **Framework**: Spring Boot 3.2.0
+- **Framework**: Spring Boot 3.3.5
 - **Database**: MS SQL Server (dev & prod)
-- **Security**: Spring Security + JWT
-- **API Documentation**: SpringDoc OpenAPI (Swagger)
-- **Build Tool**: Gradle
+- **Security**: Spring Security + JWT (JJWT 0.12.3)
+- **Migrations**: Flyway with SQL Server support
+- **Validation**: Bean Validation (Jakarta)
+- **DTO Mapping**: MapStruct 1.5.5
+- **API Documentation**: SpringDoc OpenAPI 2.3.0 (Swagger UI)
+- **Email**: Spring Boot Mail Starter
+- **WebSocket**: Spring WebSocket (for future real-time features)
+- **Build Tool**: Gradle 8.x
+- **Testing**: JUnit 5, Spring Boot Test, JaCoCo (coverage)
 
 ### Frontend
-- **Framework**: React 18 + TypeScript
+
+- **Framework**: React 18.2 + TypeScript
 - **Build Tool**: Vite
-- **Styling**: TailwindCSS
-- **State Management**: Zustand
-- **Data Fetching**: TanStack Query
-- **Routing**: React Router
-- **HTTP Client**: Axios
+- **Styling**: TailwindCSS with custom design system
+- **State Management**: Zustand (auth & theme stores)
+- **Data Fetching**: TanStack Query v5 (React Query)
+- **Forms**: React Hook Form + Zod validation
+- **Routing**: React Router v6
+- **HTTP Client**: Axios with interceptors
+- **UI Components**: Radix UI primitives (Dialog, Dropdown, Select, Tabs, Accordion)
+- **Animations**: Framer Motion
+- **Drag & Drop**: dnd-kit
+- **Icons**: Lucide React
+- **Notifications**: Sonner (toast)
+- **Date Handling**: date-fns
+- **Export**: jsPDF + jsPDF-AutoTable, PapaParse (CSV)
+- **Testing**: Vitest, React Testing Library
 
 ## Getting Started
 
 ### Prerequisites
+
 - Java 21+
 - Node.js 18+
 - Gradle 8.0+ (or use Gradle Wrapper)
@@ -74,6 +97,7 @@ MealMap/
 #### Option 1: Using Docker Compose (Recommended)
 
 1. **Copy environment template**:
+
    ```bash
    cp .env.example .env
    ```
@@ -81,16 +105,19 @@ MealMap/
 2. **Edit `.env` file and set your secrets**:
    - Set a strong `DB_PASSWORD`
    - Generate a secure `JWT_SECRET` using:
+
      ```powershell
      # PowerShell
      [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(64))
      ```
+
      ```bash
      # Linux/Mac
      openssl rand -base64 64
      ```
 
 3. **Start all services**:
+
    ```bash
    docker-compose up -d
    ```
@@ -100,6 +127,7 @@ MealMap/
 #### Option 2: Manual Docker Setup
 
 1. **Set your password as an environment variable**:
+
    ```bash
    # PowerShell
    $env:DB_PASSWORD="YourStrongPasswordHere"
@@ -109,6 +137,7 @@ MealMap/
    ```
 
 2. **Start MS SQL Server**:
+
    ```bash
    docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=$DB_PASSWORD" \
      -p 1433:1433 --name mealmap-sqlserver \
@@ -116,6 +145,7 @@ MealMap/
    ```
 
 3. **Create database**:
+
    ```bash
    docker exec -it mealmap-sqlserver /opt/mssql-tools18/bin/sqlcmd \
      -S localhost -U SA -P "$DB_PASSWORD" -C \
@@ -125,11 +155,13 @@ MealMap/
 #### Run the Backend
 
 3. Navigate to backend directory:
+
    ```bash
    cd apps/backend
    ```
 
 4. Run the application:
+
    ```bash
    ./gradlew bootRun
    ```
@@ -200,15 +232,65 @@ The frontend automatically proxies API requests to the backend during developmen
 
 The API follows the OpenAPI 3.1.0 specification located in `api/openapi.v1.json`.
 
-Key endpoint groups:
-- `/auth/*` - Authentication
-- `/ingredients` - Ingredient management
-- `/recipes` - Recipe CRUD operations
-- `/planner/weeks` - Weekly meal planning
-- `/pantry` - Pantry inventory
-- `/grocery/*` - Grocery list generation
-- `/categories` - Global ingredient categories
-- `/households` - Household management
+All endpoints are prefixed with `/v1` (configured context path).
+
+**Key endpoint groups:**
+
+- **Authentication** (`/v1/auth`)
+  - `POST /register` - User registration
+  - `POST /login` - Login with credentials (returns access token + refresh token cookie)
+  - `POST /logout` - Logout and revoke tokens
+  - `POST /refresh` - Refresh access token using refresh token cookie
+
+- **Account Management** (`/v1/api/account`)
+  - `GET /` - Get current user profile
+  - `PUT /profile` - Update display name and email
+  - `PUT /password` - Change password
+  - `PUT /preferences` - Update theme preference
+  - `DELETE /` - Delete account and all data
+  - `POST /forgot-password` - Initiate password reset (sends email)
+  - `POST /reset-password` - Complete password reset with token
+
+- **Dashboard** (`/v1/dashboard`)
+  - `GET /stats` - Get dashboard statistics (counts for ingredients, recipes, pantry items, planned meals)
+
+- **Ingredients** (`/v1/ingredients`)
+  - `GET /` - List ingredients with pagination, search, and category filter
+  - `GET /{id}` - Get ingredient by ID
+  - `POST /` - Create ingredient
+  - `PATCH /{id}` - Update ingredient
+  - `DELETE /{id}` - Delete ingredient
+
+- **Recipes** (`/v1/recipes`)
+  - `GET /` - List recipes with pagination and search
+  - `GET /{id}` - Get recipe by ID
+  - `POST /` - Create recipe with ingredient list
+  - `PATCH /{id}` - Update recipe
+  - `DELETE /{id}` - Delete recipe
+
+- **Meal Planner** (`/v1/planner/weeks`)
+  - `GET /` - List planner weeks with date range filtering
+  - `GET /{id}` - Get planner week by ID
+  - `POST /` - Create planner week
+  - `PATCH /{id}` - Update planner week (assign recipes to slots)
+  - `DELETE /{id}` - Delete planner week
+
+- **Pantry** (`/v1/pantry`)
+  - `GET /` - List pantry items with pagination
+  - `GET /{id}` - Get pantry item by ID
+  - `POST /` - Add pantry item
+  - `PATCH /{id}` - Update pantry item
+  - `DELETE /{id}` - Remove pantry item
+
+- **Grocery Lists** (`/v1/grocery`)
+  - `POST /compute` - Generate grocery list from planner week(s)
+  - `GET /{id}` - Get grocery list by ID
+  - `PATCH /{id}` - Update grocery list (toggle items, mark as purchased)
+
+- **Categories** (`/v1/categories`)
+  - `GET /` - List all ingredient categories (global, read-only for users)
+
+**Interactive API Documentation:** Access Swagger UI at `http://localhost:8080/v1/swagger-ui.html` when running locally.
 
 ## Database
 
@@ -229,7 +311,17 @@ docker-compose up -d
 For manual setup, see **Backend Setup > Option 2** above.
 
 ### Migrations
-Flyway handles database migrations automatically. Migrations are in `apps/backend/src/main/resources/db/migration/`.
+Flyway handles database migrations automatically on application startup. Migrations are versioned and immutable.
+
+**Migration files** (in `apps/backend/src/main/resources/db/migration/`):
+- `V1__Initial_schema.sql` - Users, households, profiles, categories, ingredients, pantry
+- `V2__Add_recipes.sql` - Recipes and recipe ingredients
+- `V3__Add_planner.sql` - Planner weeks and planned meals
+- `V4__Add_pantry.sql` - Pantry items table
+- `V5__Add_grocery.sql` - Grocery lists and items
+- `V6__Add_user_account_management_fields.sql` - Password reset, theme preferences, last login
+
+**Important**: Never modify existing migrations. Always create new ones for schema changes.
 
 ## Project Structure
 
@@ -237,10 +329,16 @@ See individual README files in `apps/backend` and `apps/frontend` for detailed s
 
 ## Security
 
-- JWT tokens expire after 15 minutes (access) / 7 days (refresh)
-- Passwords hashed with BCrypt
-- CORS configured for local development
-- Rate limiting enabled
+- **JWT tokens**: Access tokens expire after 15 minutes, refresh tokens after 7 days
+- **Token storage**: Access tokens in localStorage (frontend), refresh tokens in HttpOnly cookies
+- **Token rotation**: Automatic refresh on 401 errors via Axios interceptor
+- **Password hashing**: BCrypt with strength 12
+- **Password requirements**: Min 8 chars, must include uppercase, lowercase, and number
+- **Password reset**: Time-limited tokens (24 hours) sent via email
+- **CORS**: Configured for local development (localhost:5173, localhost)
+- **CSRF protection**: Not needed for stateless JWT (no session cookies for auth)
+- **SQL injection protection**: Parameterized queries via JPA
+- **Input validation**: Bean Validation (backend) + Zod schemas (frontend)
 
 ## Code Quality & Analysis
 

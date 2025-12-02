@@ -46,6 +46,11 @@ server:
   servlet:
     context-path: /v1
 
+management:
+  health:
+    mail:
+      enabled: false  # Disable mail health indicator to prevent 503 errors when mail is not configured
+
 jwt:
   secret: ${JWT_SECRET:please-change-this-to-a-secure-base64-encoded-secret-key}
   expiration: 900000  # 15 minutes
