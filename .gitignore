@@ -70,6 +70,7 @@ bin/
 !.vscode/extensions.json
 *.code-workspace
 *.md
+*.pdf
 !README.md
 
 # NetBeans
