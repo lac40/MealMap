@@ -70,7 +70,21 @@ src/
 
 ## Configuration
 
-The frontend proxies API requests to the backend. Configure the backend URL in `vite.config.ts` if needed (default: `http://localhost:8080`).
+### Environment Variables
+
+Create a `.env` file (or use `.env.local`):
+
+```env
+VITE_API_BASE_URL=http://localhost:8080/v1
+```
+
+### Development Proxy
+
+During development, Vite proxies `/v1` requests to `http://localhost:8080` (configured in `vite.config.ts`). This avoids CORS issues.
+
+### Production
+
+In production, set `VITE_API_BASE_URL` to your backend URL (e.g., `http://192.168.120.135:8080/v1`).
 
 ## Authentication
 
