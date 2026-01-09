@@ -1,10 +1,6 @@
-name: SonarQube
+name: SonarQube [DEPRECATED - Use main-pipeline.yml instead]
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_dispatch:  # Only manual trigger, automatically disabled
 jobs:
   build:
     name: Build and analyze
