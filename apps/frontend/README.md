@@ -165,7 +165,7 @@ During development, Vite proxies `/v1` requests to `http://localhost:8080` (conf
 
 ### Production
 
-In production, set `VITE_API_BASE_URL` to your backend URL (e.g., `http://192.168.120.138:8080/v1`).
+In production, set `VITE_API_BASE_URL` to your backend URL (e.g., `http://192.168.120.135:8080/v1`).
 
 ## Authentication
 

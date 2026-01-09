@@ -82,7 +82,7 @@ jobs:
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend:latest
           cache-to: type=inline
           build-args: |
-            VITE_API_BASE_URL=http://192.168.120.138:8080/v1
+            VITE_API_BASE_URL=http://192.168.120.135:8080/v1
 
   deploy:
     name: Deploy to Production
@@ -90,7 +90,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64, deploy]
     environment:
       name: production
-      url: http://192.168.120.138
+      url: http://192.168.120.135
     
     steps:
       - name: Checkout code
@@ -131,10 +131,63 @@ jobs:
       
       - name: Setup SSH
         run: |
+          echo "Setting up SSH configuration..."
+          
+          # Verify secrets are set
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "ERROR: SSH_PRIVATE_KEY secret is not set!"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.VM_HOST }}" ]; then
+            echo "ERROR: VM_HOST secret is not set!"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.VM_USER }}" ]; then
+            echo "ERROR: VM_USER secret is not set!"
+            exit 1
+          fi
+          
+          echo "All required secrets are set"
+          
+          # Create SSH directory
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          
+          # Write SSH key
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          
+          # Verify key was written
+          if [ ! -s ~/.ssh/deploy_key ]; then
+            echo "ERROR: SSH key file is empty or wasn't created!"
+            exit 1
+          fi
+          
+          # Set proper permissions
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+          
+          # Validate key format
+          ssh-keygen -l -f ~/.ssh/deploy_key > /dev/null 2>&1
+          if [ $? -ne 0 ]; then
+            echo "ERROR: SSH key format is invalid!"
+            echo "Key should be in PEM format and include header/footer lines"
+            echo "First line should be: -----BEGIN ... PRIVATE KEY-----"
+            exit 1
+          fi
+          
+          echo "SSH key validated successfully"
+          
+          # Scan and add host key
+          echo "Scanning host keys for ${{ secrets.VM_HOST }}..."
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts 2>&1
+          
+          if [ $? -ne 0 ]; then
+            echo "ERROR: Failed to scan host keys. Host may be unreachable."
+            exit 1
+          fi
+          
+          echo "SSH setup completed successfully"
       
       - name: Backup current deployment and database
         run: |
@@ -151,7 +204,7 @@ jobs:
               docker compose images --format json > deployment-backup.json 2>/dev/null || true
               
               # Backup database
-              echo "📦 Creating database backup..."
+              echo "Creating database backup..."
               docker compose exec -T mssql /opt/mssql-tools18/bin/sqlcmd \
                 -S localhost -U sa -P "${{ secrets.DB_PASSWORD }}" -C \
                 -Q "BACKUP DATABASE [${{ secrets.DB_NAME }}] TO DISK = '/var/opt/mssql/backup/mealmap-${BACKUP_TIMESTAMP}.bak' WITH FORMAT, INIT" 2>/dev/null || echo "⚠️  Database backup failed (may not exist yet)"
@@ -164,8 +217,8 @@ jobs:
               ls -t mealmap-*.bak 2>/dev/null | tail -n +3 | xargs -r rm
               cd ..
               
-              echo "✅ Backup completed: mealmap-${BACKUP_TIMESTAMP}.bak"
-              echo "📊 Current backups:"
+              echo "Backup completed: mealmap-${BACKUP_TIMESTAMP}.bak"
+              echo "Current backups:"
               ls -lh backups/mealmap-*.bak 2>/dev/null | awk '{print $9, $5}' || echo "No previous backups"
             fi
           EOFBACKUP
@@ -231,7 +284,7 @@ jobs:
             echo "Frontend status: $FRONTEND_STATUS"
             
             if [ "$BACKEND_STATUS" = "200" ] && [ "$FRONTEND_STATUS" = "200" ]; then
-              echo "✅ Health check passed"
+              echo "Health check passed"
               echo "healthy=true" >> $GITHUB_OUTPUT
               exit 0
             fi
@@ -239,14 +292,14 @@ jobs:
             sleep 10
           done
           
-          echo "❌ Health check failed"
+          echo "Health check failed"
           echo "healthy=false" >> $GITHUB_OUTPUT
           exit 1
       
       - name: Rollback on failure
         if: failure() && steps.health_check.outputs.healthy == 'false'
         run: |
-          echo "⚠️ Deployment failed, initiating rollback..."
+          echo "Deployment failed, initiating rollback..."
           
           ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
             cd ~/mealmap
@@ -271,9 +324,9 @@ jobs:
             "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/v1/actuator/health" || echo "000")
           
           if [ "$BACKEND_STATUS" = "200" ]; then
-            echo "✅ Rollback successful"
+            echo "Rollback successful"
           else
-            echo "❌ Rollback may have failed, manual intervention required"
+            echo "Rollback may have failed, manual intervention required"
           fi
       
       - name: Verify deployment
@@ -296,7 +349,7 @@ jobs:
           server_port: 587
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "✅ MealMap Deployment Successful - v${{ needs.build-and-push.outputs.version }}"
+          subject: "MealMap Deployment Successful - v${{ needs.build-and-push.outputs.version }}"
           to: kornislaci40@gmail.com
           from: MealMap CI/CD <${{ secrets.EMAIL_USERNAME }}>
           body: |
@@ -304,7 +357,7 @@ jobs:
             
             Version: ${{ needs.build-and-push.outputs.version }}
             Environment: Production
-            URL: http://192.168.120.138
+            URL: http://192.168.120.135
             
             Deployed Images:
             - Backend: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:${{ needs.build-and-push.outputs.version }}
@@ -323,7 +376,7 @@ jobs:
           server_port: 587
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "❌ MealMap Deployment Failed - v${{ needs.build-and-push.outputs.version }}"
+          subject: "MealMap Deployment Failed - v${{ needs.build-and-push.outputs.version }}"
           to: kornislaci40@gmail.com
           from: MealMap CI/CD <${{ secrets.EMAIL_USERNAME }}>
           body: |
