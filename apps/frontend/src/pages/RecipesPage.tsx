@@ -36,6 +36,9 @@ import type { Recipe } from '@/types/api'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+
 import Select from '@/components/ui/Select'
 
 const RecipesPage = () => {
@@ -130,12 +133,14 @@ const RecipesPage = () => {
     handleSubmit,
     control,
     reset,
+    watch,
     formState: { errors },
   } = useForm<RecipeFormData>({
     resolver: zodResolver(recipeSchema),
     defaultValues: {
       name: '',
       externalUrl: '',
+      notes: '',
       items: [{ ingredientId: '', quantity: { amount: 1, unit: 'g' } }],
     },
   })
@@ -159,6 +164,7 @@ const RecipesPage = () => {
     reset({
       name: '',
       externalUrl: '',
+      notes: '',
       items: [{ ingredientId: '', quantity: { amount: 1, unit: 'g' } }],
     })
     setIsFormOpen(true)
@@ -174,6 +180,7 @@ const RecipesPage = () => {
     reset({
       name: recipe.name,
       externalUrl: recipe.externalUrl || '',
+      notes: recipe.notes || '',
       items: recipe.items.map((item) => ({
         ingredientId: item.ingredientId,
         quantity: item.quantity,
@@ -202,6 +209,7 @@ const RecipesPage = () => {
     const recipeData: recipeService.CreateRecipeDto = {
       name: data.name,
       externalUrl: data.externalUrl || null,
+      notes: data.notes || null,
       items: data.items.map((item) => ({
         ingredientId: item.ingredientId,
         quantity: item.quantity,
@@ -379,6 +387,17 @@ const RecipesPage = () => {
                   )}
                 </ul>
               </div>
+
+              <div className="mt-4 border-t border-surface-200 dark:border-ink-700 pt-3">
+                <p className="text-sm font-medium text-ink-700 dark:text-ink-300 mb-2">Notes</p>
+                {recipe.notes ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-ink-700 dark:text-ink-200">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{recipe.notes}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="text-sm text-ink-500 dark:text-ink-400 italic">No notes yet</p>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -428,6 +447,31 @@ const RecipesPage = () => {
                     error={errors.externalUrl?.message}
                     {...register('externalUrl')}
                   />
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-ink-900 dark:text-ink-100">
+                      Notes (Markdown supported)
+                    </label>
+                    <textarea
+                      rows={5}
+                      placeholder="Add personal notes, tweaks, or serving tips"
+                      className="w-full rounded-lg border border-surface-300 dark:border-ink-600 bg-white dark:bg-ink-900 text-ink-900 dark:text-ink-50 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      {...register('notes')}
+                    />
+                    {errors.notes?.message && (
+                      <p className="text-sm text-danger-600">{errors.notes.message}</p>
+                    )}
+                    <div className="bg-surface-100 dark:bg-ink-900 border border-surface-200 dark:border-ink-700 rounded-lg p-3">
+                      <p className="text-xs uppercase tracking-wide text-ink-500 dark:text-ink-400 mb-2">
+                        Live Preview
+                      </p>
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-ink-800 dark:text-ink-100">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {watch('notes') || 'Nothing yet—start typing notes.'}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-3">

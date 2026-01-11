@@ -26,6 +26,7 @@ describe('recipe.service', () => {
             id: '1',
             name: 'Pasta Carbonara',
             externalUrl: null,
+            notes: 'Note',
             items: [],
             createdAt: '2024-01-01T00:00:00Z',
             updatedAt: '2024-01-01T00:00:00Z',
@@ -49,7 +50,7 @@ describe('recipe.service', () => {
       await getRecipes({ search: 'pasta', limit: 10 })
 
       expect(api.get).toHaveBeenCalledWith('/recipes', {
-        params: { search: 'pasta', limit: 10 },
+        params: { search: undefined, limit: 10, q: 'pasta' },
       })
     })
 
@@ -60,7 +61,7 @@ describe('recipe.service', () => {
       const result = await getRecipes({ cursor: 'cursor-abc' })
 
       expect(api.get).toHaveBeenCalledWith('/recipes', {
-        params: { cursor: 'cursor-abc' },
+        params: { cursor: 'cursor-abc', q: undefined, search: undefined },
       })
       expect(result.nextCursor).toBe('cursor-123')
     })
@@ -72,6 +73,7 @@ describe('recipe.service', () => {
         id: '1',
         name: 'Pasta Carbonara',
         externalUrl: 'https://example.com/recipe',
+        notes: 'Note',
         items: [
           {
             ingredientId: 'ing-1',
@@ -97,6 +99,7 @@ describe('recipe.service', () => {
       const newRecipe: CreateRecipeDto = {
         name: 'Spaghetti Bolognese',
         externalUrl: null,
+        notes: 'Family favorite',
         items: [
           {
             ingredientId: 'ing-1',
@@ -130,6 +133,7 @@ describe('recipe.service', () => {
       const newRecipe: CreateRecipeDto = {
         name: 'Pizza Margherita',
         externalUrl: 'https://example.com/pizza',
+        notes: undefined,
         items: [],
       }
 
@@ -154,6 +158,7 @@ describe('recipe.service', () => {
         id: '1',
         name: 'Updated Pasta Carbonara',
         externalUrl: 'https://new-url.com',
+        notes: 'Updated note',
         items: [
           {
             ingredientId: 'ing-1',
@@ -166,6 +171,7 @@ describe('recipe.service', () => {
         id: '1',
         name: 'Updated Pasta Carbonara',
         externalUrl: 'https://new-url.com',
+        notes: 'Updated note',
         items: updateData.items,
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-02T00:00:00Z',
@@ -178,6 +184,7 @@ describe('recipe.service', () => {
       expect(api.patch).toHaveBeenCalledWith('/recipes/1', {
         name: 'Updated Pasta Carbonara',
         externalUrl: 'https://new-url.com',
+        notes: 'Updated note',
         items: updateData.items,
       })
       expect(result).toEqual(mockResponse)
@@ -188,6 +195,7 @@ describe('recipe.service', () => {
         id: '1',
         name: 'Pasta Carbonara',
         externalUrl: null,
+        notes: null,
         items: [],
       }
 

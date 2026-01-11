@@ -89,6 +89,7 @@ public class RecipeControllerTest {
                 .id(UUID.randomUUID())
                 .name("Grilled Chicken")
                 .externalUrl("https://example.com/recipe")
+            .notes("Juicy with brine")
                 .items(Collections.singletonList(itemDto))
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -97,6 +98,7 @@ public class RecipeControllerTest {
         createRequest = new CreateRecipeRequest();
         createRequest.setName("Grilled Chicken");
         createRequest.setExternalUrl("https://example.com/recipe");
+        createRequest.setNotes("Juicy with brine");
         createRequest.setItems(Collections.singletonList(itemDto));
 
         updateRequest = new UpdateRecipeRequest();
@@ -149,7 +151,8 @@ public class RecipeControllerTest {
         mockMvc.perform(get("/recipes/{id}", recipeDto.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(recipeDto.getId().toString()))
-                .andExpect(jsonPath("$.name").value("Grilled Chicken"));
+            .andExpect(jsonPath("$.name").value("Grilled Chicken"))
+            .andExpect(jsonPath("$.notes").value("Juicy with brine"));
     }
 
     @Test
@@ -163,7 +166,8 @@ public class RecipeControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRequest)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Grilled Chicken"));
+            .andExpect(jsonPath("$.name").value("Grilled Chicken"))
+            .andExpect(jsonPath("$.notes").value("Juicy with brine"));
     }
 
     @Test

@@ -19,6 +19,7 @@ import type { Recipe, RecipeItem } from '@/types/api'
 export interface CreateRecipeDto {
   name: string
   externalUrl?: string | null
+  notes?: string | null
   items: RecipeItem[]
 }
 
@@ -57,7 +58,13 @@ export const getRecipes = async (
   params?: GetRecipesParams
 ): Promise<PaginatedRecipesResponse> => {
   const response = await api.get<PaginatedRecipesResponse>('/recipes', {
-    params,
+    params: params
+      ? {
+          ...params,
+          q: params.search,
+          search: undefined,
+        }
+      : undefined,
   })
   return response.data
 }

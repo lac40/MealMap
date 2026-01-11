@@ -17,6 +17,7 @@ public class RecipeDto {
     private UUID id;
     private String name;
     private String externalUrl;
+    private String notes;
     private List<RecipeItemDto> items;
     private Instant createdAt;
     private Instant updatedAt;

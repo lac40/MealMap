@@ -34,6 +34,9 @@ public class Recipe {
     @Column(length = 2000)
     private String externalUrl;
 
+    @Column(columnDefinition = "NVARCHAR(MAX)")
+    private String notes;
+
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<RecipeItem> items = new ArrayList<>();

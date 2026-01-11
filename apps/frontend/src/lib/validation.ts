@@ -188,6 +188,11 @@ export const recipeSchema = z.object({
     .url('Must be a valid URL')
     .optional()
     .or(z.literal('')),  // Allow empty string for optional URL
+  notes: z
+    .string()
+    .max(4000, 'Notes must be less than 4000 characters')
+    .optional()
+    .or(z.literal('')),
   items: z
     .array(recipeItemSchema)
     .min(1, 'Recipe must have at least one ingredient')

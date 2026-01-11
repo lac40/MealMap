@@ -67,6 +67,7 @@ export interface Recipe {
   id: string
   name: string
   externalUrl?: string | null
+   notes?: string | null
   items: RecipeItem[]
   createdAt: string
   updatedAt: string

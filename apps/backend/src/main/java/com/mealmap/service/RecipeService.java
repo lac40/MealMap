@@ -75,6 +75,7 @@ public class RecipeService {
                 .ownerUserId(currentUser.getId())
                 .name(request.getName())
                 .externalUrl(request.getExternalUrl())
+            .notes(request.getNotes())
                 .build();
 
         // Create recipe items
@@ -108,6 +109,9 @@ public class RecipeService {
         }
         if (request.getExternalUrl() != null) {
             recipe.setExternalUrl(request.getExternalUrl());
+        }
+        if (request.getNotes() != null) {
+            recipe.setNotes(request.getNotes());
         }
         if (request.getItems() != null) {
             // Clear existing items and add new ones
@@ -154,6 +158,7 @@ public class RecipeService {
                 .id(recipe.getId())
                 .name(recipe.getName())
                 .externalUrl(recipe.getExternalUrl())
+            .notes(recipe.getNotes())
                 .items(items)
                 .createdAt(recipe.getCreatedAt())
                 .updatedAt(recipe.getUpdatedAt())

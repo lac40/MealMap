@@ -21,6 +21,9 @@ public class CreateRecipeRequest {
 
     private String externalUrl;
 
+    @Size(max = 4000, message = "Notes must be 4000 characters or fewer")
+    private String notes;
+
     @NotNull(message = "Items are required")
     @Size(max = 150, message = "Maximum 150 items allowed")
     @Valid

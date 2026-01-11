@@ -85,6 +85,7 @@ class RecipeServiceTest {
                 .ownerUserId(testUser.getId())
                 .name("Grilled Chicken")
                 .externalUrl("https://example.com/recipe")
+                .notes("Tastes better next day")
                 .items(new ArrayList<>(Arrays.asList(recipeItem)))
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -103,10 +104,12 @@ class RecipeServiceTest {
         createRequest = new CreateRecipeRequest();
         createRequest.setName("Grilled Chicken");
         createRequest.setExternalUrl("https://example.com/recipe");
+        createRequest.setNotes("Tastes better next day");
         createRequest.setItems(Arrays.asList(itemDto));
 
         updateRequest = new UpdateRecipeRequest();
         updateRequest.setName("BBQ Chicken");
+        updateRequest.setNotes("Brush with sauce last");
 
         // Setup security context
         SecurityContextHolder.setContext(securityContext);
@@ -267,6 +270,7 @@ class RecipeServiceTest {
                     assertThat(recipe.getName()).isEqualTo("Grilled Chicken");
                     assertThat(recipe.getId()).isNotNull();
                     assertThat(recipe.getExternalUrl()).isNotBlank();
+                                        assertThat(recipe.getNotes()).isEqualTo("Tastes better next day");
                     assertThat(recipe.getItems()).isNotEmpty();
                 });
 
@@ -285,6 +289,7 @@ class RecipeServiceTest {
 
         // Then
         assertThat(result).isNotNull();
+                assertThat(result.getNotes()).isEqualTo("Brush with sauce last");
         verify(recipeRepository).findById(testRecipe.getId());
         verify(recipeRepository).save(testRecipe);
     }
@@ -366,6 +371,7 @@ class RecipeServiceTest {
         assertThat(result.getId()).isEqualTo(testRecipe.getId());
         assertThat(result.getName()).isEqualTo(testRecipe.getName());
         assertThat(result.getExternalUrl()).isEqualTo(testRecipe.getExternalUrl());
+        assertThat(result.getNotes()).isEqualTo(testRecipe.getNotes());
         assertThat(result.getItems()).hasSize(1);
         
         RecipeItemDto itemDto = result.getItems().get(0);
