@@ -122,7 +122,7 @@ class IngredientServiceTest {
         // Given
         List<Ingredient> ingredients = Arrays.asList(testIngredient);
         Page<Ingredient> page = new PageImpl<>(ingredients);
-        when(ingredientRepository.findByOwnerUserId(eq(testUser.getId()), any(Pageable.class)))
+        when(ingredientRepository.findByOwnerUserIdIn(anyList(), any(Pageable.class)))
                 .thenReturn(page);
 
         // When
@@ -134,7 +134,7 @@ class IngredientServiceTest {
         assertThat(response.getData().get(0).getName()).isEqualTo("Milk");
         assertThat(response.getNextCursor()).isNull(); // No next page
 
-        verify(ingredientRepository).findByOwnerUserId(eq(testUser.getId()), any(Pageable.class));
+        verify(ingredientRepository).findByOwnerUserIdIn(anyList(), any(Pageable.class));
     }
 
     @Test
@@ -143,8 +143,8 @@ class IngredientServiceTest {
         // Given
         List<Ingredient> ingredients = Arrays.asList(testIngredient);
         Page<Ingredient> page = new PageImpl<>(ingredients);
-        when(ingredientRepository.findByOwnerUserIdAndNameContainingIgnoreCase(
-                eq(testUser.getId()), eq("milk"), any(Pageable.class)))
+        when(ingredientRepository.findByOwnerUserIdInAndNameContainingIgnoreCase(
+                anyList(), eq("milk"), any(Pageable.class)))
                 .thenReturn(page);
 
         // When
@@ -155,8 +155,8 @@ class IngredientServiceTest {
         assertThat(response.getData()).hasSize(1);
         assertThat(response.getData().get(0).getName()).isEqualTo("Milk");
 
-        verify(ingredientRepository).findByOwnerUserIdAndNameContainingIgnoreCase(
-                eq(testUser.getId()), eq("milk"), any(Pageable.class));
+        verify(ingredientRepository).findByOwnerUserIdInAndNameContainingIgnoreCase(
+                anyList(), eq("milk"), any(Pageable.class));
     }
 
     @Test
@@ -165,8 +165,8 @@ class IngredientServiceTest {
         // Given
         List<Ingredient> ingredients = Arrays.asList(testIngredient);
         Page<Ingredient> page = new PageImpl<>(ingredients);
-        when(ingredientRepository.findByOwnerUserIdAndCategoryId(
-                eq(testUser.getId()), eq(testCategory.getId()), any(Pageable.class)))
+        when(ingredientRepository.findByOwnerUserIdInAndCategoryId(
+                anyList(), eq(testCategory.getId()), any(Pageable.class)))
                 .thenReturn(page);
 
         // When
@@ -176,8 +176,8 @@ class IngredientServiceTest {
         assertThat(response).isNotNull();
         assertThat(response.getData()).hasSize(1);
 
-        verify(ingredientRepository).findByOwnerUserIdAndCategoryId(
-                eq(testUser.getId()), eq(testCategory.getId()), any(Pageable.class));
+        verify(ingredientRepository).findByOwnerUserIdInAndCategoryId(
+                anyList(), eq(testCategory.getId()), any(Pageable.class));
     }
 
     @Test

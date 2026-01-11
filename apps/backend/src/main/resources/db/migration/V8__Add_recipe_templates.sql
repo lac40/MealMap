@@ -37,7 +37,8 @@ CREATE TABLE recipe_template_preferences (
     hidden BIT NOT NULL DEFAULT 0,
     updated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
     CONSTRAINT fk_recipe_template_pref_template FOREIGN KEY (template_id) REFERENCES recipe_templates(id) ON DELETE CASCADE,
-    CONSTRAINT fk_recipe_template_pref_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    -- Avoid multiple cascade paths: keep template cascade but use NO ACTION on user
+    CONSTRAINT fk_recipe_template_pref_user FOREIGN KEY (user_id) REFERENCES users(id),
     CONSTRAINT uq_recipe_template_pref UNIQUE (template_id, user_id)
 );
 

@@ -33,20 +33,23 @@ public class IngredientService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
 
+    private static final UUID SYSTEM_TEMPLATE_USER_ID = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
     @Transactional(readOnly = true)
     public IngredientPageResponse getIngredients(Integer limit, String cursor, String query, UUID categoryId) {
         User currentUser = getCurrentUser();
         Pageable pageable = PageRequest.of(0, limit != null ? limit : 20);
+        List<UUID> ownerIds = List.of(currentUser.getId(), SYSTEM_TEMPLATE_USER_ID);
         
         Page<Ingredient> page;
         if (query != null && !query.isBlank()) {
-            page = ingredientRepository.findByOwnerUserIdAndNameContainingIgnoreCase(
-                currentUser.getId(), query, pageable);
+            page = ingredientRepository.findByOwnerUserIdInAndNameContainingIgnoreCase(
+                ownerIds, query, pageable);
         } else if (categoryId != null) {
-            page = ingredientRepository.findByOwnerUserIdAndCategoryId(
-                currentUser.getId(), categoryId, pageable);
+            page = ingredientRepository.findByOwnerUserIdInAndCategoryId(
+                ownerIds, categoryId, pageable);
         } else {
-            page = ingredientRepository.findByOwnerUserId(currentUser.getId(), pageable);
+            page = ingredientRepository.findByOwnerUserIdIn(ownerIds, pageable);
         }
 
         List<IngredientDto> data = page.getContent().stream()
@@ -68,7 +71,8 @@ public class IngredientService {
         Ingredient ingredient = ingredientRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingredient not found"));
 
-        if (!ingredient.getOwnerUserId().equals(currentUser.getId())) {
+        if (!ingredient.getOwnerUserId().equals(currentUser.getId())
+            && !ingredient.getOwnerUserId().equals(SYSTEM_TEMPLATE_USER_ID)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not authorized to access this ingredient");
         }
 

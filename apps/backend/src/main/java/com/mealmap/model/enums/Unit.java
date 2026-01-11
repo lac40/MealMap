@@ -6,5 +6,8 @@ public enum Unit {
     ml,
     l,
     piece,
-    pack
+    pack,
+    clove,
+    head,
+    pc
 }
