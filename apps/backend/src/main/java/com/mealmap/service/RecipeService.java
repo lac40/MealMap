@@ -75,7 +75,7 @@ public class RecipeService {
                 .ownerUserId(currentUser.getId())
                 .name(request.getName())
                 .externalUrl(request.getExternalUrl())
-            .notes(request.getNotes())
+                .notes(request.getNotes())
                 .build();
 
         // Create recipe items

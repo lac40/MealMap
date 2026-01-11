@@ -89,7 +89,7 @@ public class RecipeControllerTest {
                 .id(UUID.randomUUID())
                 .name("Grilled Chicken")
                 .externalUrl("https://example.com/recipe")
-            .notes("Juicy with brine")
+                .notes("Juicy with brine")
                 .items(Collections.singletonList(itemDto))
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -103,6 +103,7 @@ public class RecipeControllerTest {
 
         updateRequest = new UpdateRecipeRequest();
         updateRequest.setName("BBQ Chicken");
+        updateRequest.setNotes("Updated notes");
 
         pageResponse = RecipePageResponse.builder()
                 .data(Collections.singletonList(recipeDto))

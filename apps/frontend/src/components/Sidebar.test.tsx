@@ -5,16 +5,16 @@ import Sidebar from './Sidebar'
 
 const renderSidebar = (props?: Partial<React.ComponentProps<typeof Sidebar>>) => {
   return render(
-    <MemoryRouter>
-      <Sidebar
-        isCollapsed={false}
-        isMobileOpen={false}
-        onToggleCollapse={() => {}}
-        onToggleMobile={() => {}}
-        isMobile={false}
-        {...props}
-      />
-    </MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Sidebar
+          isCollapsed={false}
+          isMobileOpen={false}
+          onToggleCollapse={() => {}}
+          onToggleMobile={() => {}}
+          isMobile={false}
+          {...props}
+        />
+      </MemoryRouter>
   )
 }
 

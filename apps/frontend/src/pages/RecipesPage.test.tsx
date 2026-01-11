@@ -73,6 +73,7 @@ const mockRecipes: Recipe[] = [
 describe('Recipes Page User Interface', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(ingredientService.getIngredients).mockResolvedValue({ data: [], nextCursor: null })
   })
 
   it('should display page header with title and empty state message when user has no saved recipes', async () => {

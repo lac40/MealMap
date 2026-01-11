@@ -60,9 +60,9 @@ export const getRecipes = async (
   const response = await api.get<PaginatedRecipesResponse>('/recipes', {
     params: params
       ? {
-          ...params,
+          limit: params.limit,
+          cursor: params.cursor,
           q: params.search,
-          search: undefined,
         }
       : undefined,
   })

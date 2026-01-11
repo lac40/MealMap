@@ -190,6 +190,7 @@ class RecipeServiceTest {
                     assertThat(recipe.getId()).isEqualTo(testRecipe.getId());
                     assertThat(recipe.getName()).isEqualTo("Grilled Chicken");
                     assertThat(recipe.getExternalUrl()).isEqualTo("https://example.com/recipe");
+                    assertThat(recipe.getNotes()).isEqualTo("Tastes better next day");
                     assertThat(recipe.getItems())
                             .isNotEmpty()
                             .hasSize(1)

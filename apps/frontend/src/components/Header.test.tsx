@@ -28,8 +28,8 @@ describe('Header', () => {
 
 function renderHeader() {
   return render(
-    <MemoryRouter>
+    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Header onMobileMenuToggle={() => {}} isMobile={false} />
-    </MemoryRouter>
+    </MemoryRouter>,
   )
 }

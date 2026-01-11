@@ -2,9 +2,9 @@
   "openapi": "3.1.0",
   "info": {
     "title": "MealMap API",
-    "version": "1.2.0",
+    "version": "1.1.1",
     "summary": "Meal planning, grocery computation, collaboration, and optional AI helpers.",
-    "description": "Versioned REST API with WebSocket/SSE realtime channels. User-scoped and global seeded ingredients, global recipe templates, planner with configurable slots (breakfast, snackAM, lunch, snackPM, dinner), grocery computation with simple unit conversion, N-trip splitting, templates, exports, notifications, sharing, and optional features (nutrition, import, optimizer, normalization, substitutions, barcode, OCR).",
+    "description": "Versioned REST API with WebSocket/SSE realtime channels. User-scoped ingredients, global seeded categories, planner with configurable slots (breakfast, snackAM, lunch, snackPM, dinner), grocery computation with simple unit conversion, N-trip splitting, templates, exports, notifications, sharing, and optional features (nutrition, import, optimizer, normalization, substitutions, barcode, OCR).",
     "termsOfService": "https://api.mealmap.app/terms",
     "contact": { "name": "MealMap API Support", "email": "support@mealmap.app" },
     "license": { "name": "Proprietary" }
@@ -17,7 +17,7 @@
     { "name": "Auth" }, { "name": "Account" }, { "name": "Profiles" }, { "name": "Households" },
     { "name": "Ingredients" }, { "name": "Categories" }, { "name": "Recipes" },
     { "name": "Planner" }, { "name": "Pantry" }, { "name": "Grocery" },
-    { "name": "Templates" }, { "name": "Recipe Templates" }, { "name": "Exports" }, { "name": "Sharing" },
+    { "name": "Templates" }, { "name": "Exports" }, { "name": "Sharing" },
     { "name": "Realtime" }, { "name": "Notifications" }, { "name": "Activity" },
     { "name": "Admin" }, { "name": "Optional/Nutrition" }, { "name": "Optional/Import" },
     { "name": "Optional/Optimizer" }, { "name": "Optional/Normalization" },
@@ -155,20 +155,19 @@
 
       "Ingredient": {
         "type": "object",
-        "description": "User-scoped or global seeded ingredient.",
+        "description": "User-scoped ingredient.",
         "properties": {
           "id": { "$ref": "#/components/schemas/UUID" },
-          "ownerUserId": { "$ref": "#/components/schemas/UUID", "nullable": true, "description": "Null for global seeded ingredients" },
+          "ownerUserId": { "$ref": "#/components/schemas/UUID" },
           "name": { "type": "string" },
           "categoryId": { "$ref": "#/components/schemas/UUID" },
           "defaultUnit": { "$ref": "#/components/schemas/Unit" },
           "packageSize": { "$ref": "#/components/schemas/PackageSize" },
           "notes": { "type": "string" },
-          "isGlobal": { "type": "boolean", "default": false, "description": "true for globally seeded ingredients; global rows are read-only" },
           "createdAt": { "$ref": "#/components/schemas/ISODateTime" },
           "updatedAt": { "$ref": "#/components/schemas/ISODateTime" }
         },
-        "required": ["id", "name", "categoryId", "defaultUnit", "packageSize", "createdAt"]
+        "required": ["id", "ownerUserId", "name", "categoryId", "defaultUnit", "packageSize", "createdAt"]
       },
 
       "Category": {
@@ -208,12 +207,6 @@
           "id": { "$ref": "#/components/schemas/UUID" },
           "name": { "type": "string" },
           "externalUrl": { "type": "string", "format": "uri", "nullable": true },
-          "notes": {
-            "type": "string",
-            "maxLength": 4000,
-            "nullable": true,
-            "description": "Markdown (CommonMark) notes. Private to recipe owner."
-          },
           "items": {
             "type": "array", "maxItems": 150,
             "items": { "$ref": "#/components/schemas/RecipeItem" }
@@ -222,82 +215,6 @@
           "updatedAt": { "$ref": "#/components/schemas/ISODateTime" }
         },
         "required": ["id", "name", "items", "createdAt"]
-      },
-
-      "DietaryTag": {
-        "type": "string",
-        "enum": ["vegan", "vegetarian", "pescatarian", "gluten-free", "dairy-free", "nut-free", "keto", "paleo", "low-carb", "halal"]
-      },
-
-      "RecipeTemplate": {
-        "type": "object",
-        "description": "Recipe template that can be duplicated into a user-owned recipe. Global templates are immutable but can be favorited/hidden per user.",
-        "properties": {
-          "id": { "$ref": "#/components/schemas/UUID" },
-          "name": { "type": "string" },
-          "description": { "type": "string", "nullable": true },
-          "tags": { "type": "array", "items": { "type": "string" }, "maxItems": 10 },
-          "dietaryTags": { "type": "array", "items": { "$ref": "#/components/schemas/DietaryTag" }, "maxItems": 8 },
-          "items": { "type": "array", "items": { "$ref": "#/components/schemas/RecipeItem" }, "maxItems": 150 },
-          "source": { "type": "string", "enum": ["global", "user"], "description": "Global templates are preinstalled and immutable." },
-          "ownerUserId": { "$ref": "#/components/schemas/UUID", "nullable": true },
-          "favorite": { "type": "boolean", "default": false },
-          "hidden": { "type": "boolean", "default": false },
-          "immutable": { "type": "boolean", "default": false },
-          "createdAt": { "$ref": "#/components/schemas/ISODateTime" },
-          "updatedAt": { "$ref": "#/components/schemas/ISODateTime" }
-        },
-        "required": ["id", "name", "items", "source", "createdAt"]
-      },
-
-      "RecipeTemplateCreate": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "description": { "type": "string", "nullable": true },
-          "tags": { "type": "array", "items": { "type": "string" }, "maxItems": 10 },
-          "dietaryTags": { "type": "array", "items": { "$ref": "#/components/schemas/DietaryTag" }, "maxItems": 8 },
-          "items": { "type": "array", "items": { "$ref": "#/components/schemas/RecipeItem" }, "maxItems": 150 }
-        },
-        "required": ["name", "items"]
-      },
-
-      "RecipeTemplateUpdate": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "description": { "type": "string", "nullable": true },
-          "tags": { "type": "array", "items": { "type": "string" }, "maxItems": 10 },
-          "dietaryTags": { "type": "array", "items": { "$ref": "#/components/schemas/DietaryTag" }, "maxItems": 8 },
-          "items": { "type": "array", "items": { "$ref": "#/components/schemas/RecipeItem" }, "maxItems": 150 }
-        }
-      },
-
-      "RecipeTemplatePreferences": {
-        "type": "object",
-        "properties": {
-          "favorite": { "type": "boolean" },
-          "hidden": { "type": "boolean" }
-        },
-        "description": "Per-user preferences for a recipe template"
-      },
-
-      "RecipeTemplateDuplicateRequest": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string", "description": "Optional override for new recipe name" },
-          "notes": { "type": "string", "description": "Optional initial notes for the duplicated recipe (markdown)" },
-          "externalUrl": { "type": "string", "format": "uri", "nullable": true }
-        }
-      },
-
-      "RecipeTemplatePage": {
-        "type": "object",
-        "properties": {
-          "data": { "type": "array", "items": { "$ref": "#/components/schemas/RecipeTemplate" } },
-          "nextCursor": { "type": "string", "nullable": true }
-        },
-        "required": ["data"]
       },
 
       "PlannerItem": {
@@ -376,74 +293,15 @@
         "required": ["id", "planWeekId", "trips", "createdAt"]
       },
 
-      "TemplateItem": {
-        "type": "object",
-        "properties": {
-          "ingredientId": { "$ref": "#/components/schemas/UUID" },
-          "quantity": { "$ref": "#/components/schemas/Quantity" },
-          "packageNote": { "type": "string", "maxLength": 4000 }
-        },
-        "required": ["ingredientId", "quantity"]
-      },
-
       "Template": {
         "type": "object",
         "properties": {
           "id": { "$ref": "#/components/schemas/UUID" },
           "name": { "type": "string" },
-          "description": { "type": "string", "maxLength": 2000, "nullable": true },
-          "tags": { "type": "array", "items": { "type": "string", "maxLength": 60 }, "nullable": true },
-          "dietaryTags": { "type": "array", "items": { "type": "string", "maxLength": 60 }, "nullable": true },
-          "source": { "type": "string", "enum": ["global", "user"] },
-          "ownerUserId": { "$ref": "#/components/schemas/UUID", "nullable": true },
-          "favorite": { "type": "boolean" },
-          "hidden": { "type": "boolean" },
-          "immutable": { "type": "boolean" },
-          "items": { "type": "array", "items": { "$ref": "#/components/schemas/TemplateItem" } },
-          "createdAt": { "$ref": "#/components/schemas/ISODateTime" },
-          "updatedAt": { "$ref": "#/components/schemas/ISODateTime" }
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/PlannerItem" } },
+          "createdAt": { "$ref": "#/components/schemas/ISODateTime" }
         },
-        "required": ["id", "name", "items", "source", "immutable", "createdAt", "updatedAt"]
-      },
-
-      "TemplateCreateRequest": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string", "maxLength": 200 },
-          "description": { "type": "string", "maxLength": 2000 },
-          "tags": { "type": "array", "items": { "type": "string", "maxLength": 60 }, "maxItems": 50 },
-          "dietaryTags": { "type": "array", "items": { "type": "string", "maxLength": 60 }, "maxItems": 50 },
-          "items": { "type": "array", "items": { "$ref": "#/components/schemas/TemplateItem" }, "minItems": 1, "maxItems": 150 }
-        },
-        "required": ["name", "items"]
-      },
-
-      "TemplateUpdateRequest": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string", "maxLength": 200 },
-          "description": { "type": "string", "maxLength": 2000 },
-          "tags": { "type": "array", "items": { "type": "string", "maxLength": 60 }, "maxItems": 50 },
-          "dietaryTags": { "type": "array", "items": { "type": "string", "maxLength": 60 }, "maxItems": 50 },
-          "items": { "type": "array", "items": { "$ref": "#/components/schemas/TemplateItem" }, "maxItems": 150 }
-        }
-      },
-
-      "TemplatePreferencesRequest": {
-        "type": "object",
-        "properties": {
-          "favorite": { "type": "boolean" },
-          "hidden": { "type": "boolean" }
-        }
-      },
-
-      "TemplateDuplicateRequest": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string", "maxLength": 200 },
-          "notes": { "type": "string", "maxLength": 4000 },
-          "externalUrl": { "type": "string", "maxLength": 2000 }
-        }
+        "required": ["id", "name", "items", "createdAt"]
       },
 
       "Notification": {
@@ -917,52 +775,6 @@
       "delete": { "tags": ["Recipes"], "summary": "Delete recipe", "responses": { "204": { "$ref": "#/components/responses/NoContent" } }, "security": [{ "bearerAuth": [] }] }
     },
 
-    "/recipe-templates": {
-      "get": {
-        "tags": ["Recipe Templates"], "summary": "List recipe templates (global + user)",
-        "parameters": [
-          { "$ref": "#/components/parameters/pageLimit" }, { "$ref": "#/components/parameters/pageCursor" },
-          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Search by name" },
-          { "name": "dietaryTag", "in": "query", "schema": { "$ref": "#/components/schemas/DietaryTag" } },
-          { "name": "favoritesOnly", "in": "query", "schema": { "type": "boolean", "default": false } },
-          { "name": "includeHidden", "in": "query", "schema": { "type": "boolean", "default": false } },
-          { "name": "source", "in": "query", "schema": { "type": "string", "enum": ["global", "user", "all"], "default": "all" } }
-        ],
-        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecipeTemplatePage" } } } } },
-        "security": [{ "bearerAuth": [] }]
-      },
-      "post": {
-        "tags": ["Recipe Templates"], "summary": "Create recipe template (user-owned)",
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecipeTemplateCreate" } } } },
-        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecipeTemplate" } } } } },
-        "security": [{ "bearerAuth": [] }]
-      }
-    },
-    "/recipe-templates/{id}": {
-      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
-      "get": { "tags": ["Recipe Templates"], "summary": "Get recipe template", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecipeTemplate" } } } } }, "security": [{ "bearerAuth": [] }] },
-      "patch": { "tags": ["Recipe Templates"], "summary": "Update recipe template (user-owned)", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecipeTemplateUpdate" } } } }, "responses": { "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecipeTemplate" } } } } }, "security": [{ "bearerAuth": [] }] },
-      "delete": { "tags": ["Recipe Templates"], "summary": "Delete recipe template (user-owned)", "responses": { "204": { "$ref": "#/components/responses/NoContent" } }, "security": [{ "bearerAuth": [] }] }
-    },
-    "/recipe-templates/{id}/duplicate": {
-      "post": {
-        "tags": ["Recipe Templates"], "summary": "Duplicate template into a user-owned recipe",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
-        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecipeTemplateDuplicateRequest" } } } },
-        "responses": { "201": { "description": "Recipe created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Recipe" } } } } },
-        "security": [{ "bearerAuth": [] }]
-      }
-    },
-    "/recipe-templates/{id}/preferences": {
-      "patch": {
-        "tags": ["Recipe Templates"], "summary": "Set per-user preferences (favorite/hide)",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecipeTemplatePreferences" } } } },
-        "responses": { "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecipeTemplate" } } } } },
-        "security": [{ "bearerAuth": [] }]
-      }
-    },
-
     "/planner/weeks": {
       "get": {
         "tags": ["Planner"], "summary": "List planner weeks (personal + household)",
@@ -1038,49 +850,8 @@
     },
 
     "/templates": {
-      "get": {
-        "tags": ["Templates"], "summary": "List templates",
-        "parameters": [
-          { "$ref": "#/components/parameters/pageLimit" },
-          { "$ref": "#/components/parameters/pageCursor" },
-          { "name": "q", "in": "query", "schema": { "type": "string" }, "description": "Filter by name (case-insensitive contains)." }
-        ],
-        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Template" } }, "nextCursor": { "type": "string", "nullable": true } } } } } } },
-        "security": [{ "bearerAuth": [] }]
-      },
-      "post": {
-        "tags": ["Templates"], "summary": "Create template",
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateCreateRequest" } } } },
-        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Template" } } } } },
-        "security": [{ "bearerAuth": [] }]
-      }
-    },
-
-    "/templates/{id}": {
-      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
-      "get": { "tags": ["Templates"], "summary": "Get template", "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Template" } } } } }, "security": [{ "bearerAuth": [] }] },
-      "patch": { "tags": ["Templates"], "summary": "Update template", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateUpdateRequest" } } } }, "responses": { "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Template" } } } } }, "security": [{ "bearerAuth": [] }] },
-      "delete": { "tags": ["Templates"], "summary": "Delete template", "responses": { "204": { "$ref": "#/components/responses/NoContent" } }, "security": [{ "bearerAuth": [] }] }
-    },
-
-    "/templates/{id}/preferences": {
-      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
-      "patch": {
-        "tags": ["Templates"], "summary": "Update template preferences (favorite/hidden)",
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplatePreferencesRequest" } } } },
-        "responses": { "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Template" } } } } },
-        "security": [{ "bearerAuth": [] }]
-      }
-    },
-
-    "/templates/{id}/duplicate": {
-      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/UUID" } }],
-      "post": {
-        "tags": ["Templates"], "summary": "Duplicate template into a recipe",
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TemplateDuplicateRequest" } } } },
-        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Recipe" } } } } },
-        "security": [{ "bearerAuth": [] }]
-      }
+      "get": { "tags": ["Templates"], "summary": "List templates", "parameters": [{ "$ref": "#/components/parameters/pageLimit" }, { "$ref": "#/components/parameters/pageCursor" }], "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Template" } }, "nextCursor": { "type": "string", "nullable": true } } } } } } }, "security": [{ "bearerAuth": [] }] },
+      "post": { "tags": ["Templates"], "summary": "Create template", "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Template" } } } }, "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Template" } } } } }, "security": [{ "bearerAuth": [] }] }
     },
     "/templates/{id}/apply": {
       "post": {
@@ -1309,7 +1080,6 @@
       "maxRecipeItems": 150,
       "maxPantryItemsPerUser": 500,
       "maxTemplates": 30,
-      "maxRecipeTemplates": 100,
       "maxHouseholdMembers": 20,
       "maxNotificationsReturned": 30
     }

@@ -50,7 +50,7 @@ describe('recipe.service', () => {
       await getRecipes({ search: 'pasta', limit: 10 })
 
       expect(api.get).toHaveBeenCalledWith('/recipes', {
-        params: { search: undefined, limit: 10, q: 'pasta' },
+        params: { limit: 10, cursor: undefined, q: 'pasta' },
       })
     })
 
@@ -61,7 +61,7 @@ describe('recipe.service', () => {
       const result = await getRecipes({ cursor: 'cursor-abc' })
 
       expect(api.get).toHaveBeenCalledWith('/recipes', {
-        params: { cursor: 'cursor-abc', q: undefined, search: undefined },
+        params: { limit: undefined, cursor: 'cursor-abc', q: undefined },
       })
       expect(result.nextCursor).toBe('cursor-123')
     })
