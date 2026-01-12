@@ -2,7 +2,7 @@
 -- Comprehensive demo data with expanded ingredients and enhanced recipe templates
 
 -- Delete existing demo ingredients and templates to start fresh
-DELETE FROM recipe_template_items WHERE recipe_template_id IN (SELECT id FROM recipe_templates WHERE source = 'global');
+DELETE FROM recipe_template_items WHERE template_id IN (SELECT id FROM recipe_templates WHERE source = 'global');
 DELETE FROM recipe_templates WHERE source = 'global';
 DELETE FROM ingredients WHERE owner_user_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
@@ -124,7 +124,7 @@ INSERT INTO recipe_templates (id, name, description, source, owner_user_id, tags
 
 -- Insert recipe template items (ingredients for each template)
 -- Spaghetti Carbonara (Template 1)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000036', 400, 'g'),
 ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000074', 200, 'g'),
 ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000008', 100, 'g'),
@@ -133,7 +133,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000055', 0.5, 'piece');
 
 -- Grilled Chicken (Template 2)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', 2, 'piece'),
 ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000014', 2, 'piece'),
 ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000017', 3, 'piece'),
@@ -142,7 +142,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000054', 1, 'piece');
 
 -- Thai Green Curry (Template 3)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000001', 500, 'g'),
 ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000081', 400, 'ml'),
 ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000019', 200, 'g'),
@@ -152,7 +152,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000042', 2, 'ml');
 
 -- Beef Tacos (Template 4)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000002', 500, 'g'),
 ('20000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000083', 8, 'piece'),
 ('20000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000012', 1, 'piece'),
@@ -161,7 +161,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000054', 1, 'piece');
 
 -- Vegetable Stir Fry (Template 5)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000014', 2, 'piece'),
 ('20000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000016', 200, 'g'),
 ('20000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000020', 200, 'g'),
@@ -170,7 +170,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000042', 3, 'ml');
 
 -- Greek Salad (Template 6)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000011', 4, 'piece'),
 ('20000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000018', 1, 'piece'),
 ('20000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000007', 200, 'g'),
@@ -179,7 +179,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000054', 1, 'piece');
 
 -- Salmon with Lemon Butter (Template 7)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000007', '10000000-0000-0000-0000-000000000003', 2, 'piece'),
 ('20000000-0000-0000-0000-000000000007', '10000000-0000-0000-0000-000000000052', 50, 'g'),
 ('20000000-0000-0000-0000-000000000007', '10000000-0000-0000-0000-000000000031', 2, 'piece'),
@@ -188,7 +188,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000007', '10000000-0000-0000-0000-000000000055', 0.5, 'piece');
 
 -- Mushroom Risotto (Template 8)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000008', '10000000-0000-0000-0000-000000000035', 300, 'g'),
 ('20000000-0000-0000-0000-000000000008', '10000000-0000-0000-0000-000000000020', 300, 'g'),
 ('20000000-0000-0000-0000-000000000008', '10000000-0000-0000-0000-000000000012', 1, 'piece'),
@@ -197,7 +197,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000008', '10000000-0000-0000-0000-000000000051', 1, 'l');
 
 -- Chicken Caesar Wrap (Template 9)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000009', '10000000-0000-0000-0000-000000000001', 300, 'g'),
 ('20000000-0000-0000-0000-000000000009', '10000000-0000-0000-0000-000000000083', 2, 'piece'),
 ('20000000-0000-0000-0000-000000000009', '10000000-0000-0000-0000-000000000023', 100, 'g'),
@@ -206,7 +206,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000009', '10000000-0000-0000-0000-000000000054', 1, 'piece');
 
 -- Vegetable Soup (Template 10)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000010', '10000000-0000-0000-0000-000000000017', 3, 'piece'),
 ('20000000-0000-0000-0000-000000000010', '10000000-0000-0000-0000-000000000012', 2, 'piece'),
 ('20000000-0000-0000-0000-000000000010', '10000000-0000-0000-0000-000000000011', 3, 'piece'),
@@ -215,7 +215,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000010', '10000000-0000-0000-0000-000000000062', 1, 'piece');
 
 -- Turkey Meatballs (Template 11)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000011', '10000000-0000-0000-0000-000000000066', 500, 'g'),
 ('20000000-0000-0000-0000-000000000011', '10000000-0000-0000-0000-000000000037', 100, 'g'),
 ('20000000-0000-0000-0000-000000000011', '10000000-0000-0000-0000-000000000004', 1, 'piece'),
@@ -224,7 +224,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000011', '10000000-0000-0000-0000-000000000044', 200, 'ml');
 
 -- Quinoa Buddha Bowl (Template 12)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000012', '10000000-0000-0000-0000-000000000085', 200, 'g'),
 ('20000000-0000-0000-0000-000000000012', '10000000-0000-0000-0000-000000000075', 200, 'g'),
 ('20000000-0000-0000-0000-000000000012', '10000000-0000-0000-0000-000000000016', 150, 'g'),
@@ -233,7 +233,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000012', '10000000-0000-0000-0000-000000000045', 3, 'ml');
 
 -- Beef Stir Fry with Brown Rice (Template 13)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000013', '10000000-0000-0000-0000-000000000073', 500, 'g'),
 ('20000000-0000-0000-0000-000000000013', '10000000-0000-0000-0000-000000000035', 300, 'g'),
 ('20000000-0000-0000-0000-000000000013', '10000000-0000-0000-0000-000000000014', 2, 'piece'),
@@ -242,7 +242,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000013', '10000000-0000-0000-0000-000000000013', 1, 'clove');
 
 -- Caprese Sandwich (Template 14)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000014', '10000000-0000-0000-0000-000000000037', 2, 'piece'),
 ('20000000-0000-0000-0000-000000000014', '10000000-0000-0000-0000-000000000007', 150, 'g'),
 ('20000000-0000-0000-0000-000000000014', '10000000-0000-0000-0000-000000000011', 2, 'piece'),
@@ -251,7 +251,7 @@ INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_a
 ('20000000-0000-0000-0000-000000000014', '10000000-0000-0000-0000-000000000041', 1, 'ml');
 
 -- Shrimp Pasta Primavera (Template 15)
-INSERT INTO recipe_template_items (recipe_template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
+INSERT INTO recipe_template_items (template_id, ingredient_id, quantity_amount, quantity_unit) VALUES
 ('20000000-0000-0000-0000-000000000015', '10000000-0000-0000-0000-000000000036', 400, 'g'),
 ('20000000-0000-0000-0000-000000000015', '10000000-0000-0000-0000-000000000067', 300, 'g'),
 ('20000000-0000-0000-0000-000000000015', '10000000-0000-0000-0000-000000000014', 2, 'piece'),
