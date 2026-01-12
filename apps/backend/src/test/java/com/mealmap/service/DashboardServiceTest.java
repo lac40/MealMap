@@ -77,7 +77,7 @@ class DashboardServiceTest {
         // Given
         testUser.setHousehold(null);
 
-        when(ingredientRepository.countByOwnerUserId(userId)).thenReturn(5L);
+        when(ingredientRepository.countByOwnerUserIdIn(anyList())).thenReturn(5L);
         when(recipeRepository.countByOwnerUserId(userId)).thenReturn(10L);
         when(pantryItemRepository.countByUserId(userId)).thenReturn(15L);
         when(plannerWeekRepository.countPlannerItemsByUserIdAndDateRange(
@@ -95,7 +95,7 @@ class DashboardServiceTest {
         assertThat(stats.getPlannedMealsCount()).isEqualTo(8L); // Current week
         assertThat(stats.getUpcomingMealsCount()).isEqualTo(12L); // Upcoming
 
-        verify(ingredientRepository).countByOwnerUserId(userId);
+        verify(ingredientRepository).countByOwnerUserIdIn(anyList());
         verify(recipeRepository).countByOwnerUserId(userId);
         verify(pantryItemRepository).countByUserId(userId);
         verify(plannerWeekRepository, times(2)).countPlannerItemsByUserIdAndDateRange(
@@ -118,7 +118,7 @@ class DashboardServiceTest {
 
         List<UUID> householdIds = Collections.singletonList(householdId);
 
-        when(ingredientRepository.countByOwnerUserId(userId)).thenReturn(20L);
+        when(ingredientRepository.countByOwnerUserIdIn(anyList())).thenReturn(20L);
         when(recipeRepository.countByOwnerUserId(userId)).thenReturn(25L);
         when(pantryItemRepository.countByUserOrHouseholds(userId, householdIds)).thenReturn(30L);
         when(plannerWeekRepository.countPlannerItemsByUserOrHouseholdsAndDateRange(
@@ -136,7 +136,7 @@ class DashboardServiceTest {
         assertThat(stats.getPlannedMealsCount()).isEqualTo(18L);
         assertThat(stats.getUpcomingMealsCount()).isEqualTo(22L);
 
-        verify(ingredientRepository).countByOwnerUserId(userId);
+        verify(ingredientRepository).countByOwnerUserIdIn(anyList());
         verify(recipeRepository).countByOwnerUserId(userId);
         verify(pantryItemRepository).countByUserOrHouseholds(userId, householdIds);
         verify(plannerWeekRepository, times(2)).countPlannerItemsByUserOrHouseholdsAndDateRange(
@@ -151,7 +151,7 @@ class DashboardServiceTest {
         // Given
         testUser.setHousehold(null);
 
-        when(ingredientRepository.countByOwnerUserId(userId)).thenReturn(0L);
+        when(ingredientRepository.countByOwnerUserIdIn(anyList())).thenReturn(0L);
         when(recipeRepository.countByOwnerUserId(userId)).thenReturn(0L);
         when(pantryItemRepository.countByUserId(userId)).thenReturn(0L);
         when(plannerWeekRepository.countPlannerItemsByUserIdAndDateRange(
@@ -176,7 +176,7 @@ class DashboardServiceTest {
         // Given
         testUser.setHousehold(null);
 
-        when(ingredientRepository.countByOwnerUserId(userId)).thenReturn(0L);
+        when(ingredientRepository.countByOwnerUserIdIn(anyList())).thenReturn(0L);
         when(recipeRepository.countByOwnerUserId(userId)).thenReturn(0L);
         when(pantryItemRepository.countByUserId(userId)).thenReturn(0L);
         when(plannerWeekRepository.countPlannerItemsByUserIdAndDateRange(
@@ -211,7 +211,7 @@ class DashboardServiceTest {
         // Given
         testUser.setHousehold(null);
 
-        when(ingredientRepository.countByOwnerUserId(userId)).thenReturn(1000L);
+        when(ingredientRepository.countByOwnerUserIdIn(anyList())).thenReturn(1000L);
         when(recipeRepository.countByOwnerUserId(userId)).thenReturn(5000L);
         when(pantryItemRepository.countByUserId(userId)).thenReturn(10000L);
         when(plannerWeekRepository.countPlannerItemsByUserIdAndDateRange(
