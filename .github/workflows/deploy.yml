@@ -260,52 +260,71 @@ jobs:
           EOF
       
       - name: Wait for services to start
-        run: sleep 30
+        run: |
+          echo "Waiting for services to initialize..."
+          sleep 70  # Wait for DB init, migrations, and Spring Boot startup (adjusted from 30s)
       
       - name: Health check
         id: health_check
         run: |
-          MAX_ATTEMPTS=10
+          MAX_ATTEMPTS=15
           ATTEMPT=0
           
           while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
             ATTEMPT=$((ATTEMPT + 1))
             echo "Health check attempt $ATTEMPT/$MAX_ATTEMPTS"
             
-            # Check backend health
+            # Check backend health with verbose output
             BACKEND_STATUS=$(ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
-              "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/v1/actuator/health" || echo "000")
+              "curl -s -w '\n%{http_code}' http://localhost:8080/v1/actuator/health" 2>&1 || echo -e "error\n000")
+            
+            BACKEND_HTTP_CODE=$(echo "$BACKEND_STATUS" | tail -1)
+            BACKEND_RESPONSE=$(echo "$BACKEND_STATUS" | head -1)
             
             # Check frontend
             FRONTEND_STATUS=$(ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
               "curl -s -o /dev/null -w '%{http_code}' http://localhost:80" || echo "000")
             
-            echo "Backend status: $BACKEND_STATUS"
+            echo "Backend HTTP Code: $BACKEND_HTTP_CODE"
+            if [ ! -z "$BACKEND_RESPONSE" ] && [ "$BACKEND_RESPONSE" != "000" ]; then
+              echo "Backend Response: $BACKEND_RESPONSE"
+            fi
             echo "Frontend status: $FRONTEND_STATUS"
             
-            if [ "$BACKEND_STATUS" = "200" ] && [ "$FRONTEND_STATUS" = "200" ]; then
+            if [ "$BACKEND_HTTP_CODE" = "200" ] && [ "$FRONTEND_STATUS" = "200" ]; then
               echo "Health check passed"
               echo "healthy=true" >> $GITHUB_OUTPUT
               exit 0
             fi
             
+            echo "Waiting 10 seconds before retry..."
             sleep 10
           done
           
-          echo "Health check failed"
+          echo "Health check failed after $MAX_ATTEMPTS attempts"
           echo "healthy=false" >> $GITHUB_OUTPUT
+          
+          # Fetch logs for debugging
+          echo ""
+          echo "=== Backend Logs for Debugging ==="
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
+            "docker compose -f ~/mealmap/docker-compose.yml logs backend --tail=50" || echo "Could not fetch backend logs"
+          
           exit 1
       
       - name: Rollback on failure
         if: failure() && steps.health_check.outputs.healthy == 'false'
         run: |
-          echo "Deployment failed, initiating rollback..."
+          echo "Deployment health check failed, initiating rollback..."
           
           ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
             cd ~/mealmap
             
-            # Stop failed deployment
+            echo "Stopping failed deployment..."
             docker compose down
+            
+            # Save failed .env for debugging
+            cp .env .env.failed-deployment
             
             # Update .env to use previous images
             sed -i 's/BACKEND_IMAGE=.*$/BACKEND_IMAGE=${{ env.REGISTRY }}\/${{ env.IMAGE_PREFIX }}-backend:latest/' .env
@@ -314,31 +333,35 @@ jobs:
             # Start with previous version
             docker compose up -d
             
-            echo "Rollback completed"
+            echo "Rollback initiated with previous image versions"
           EOF
           
-          # Wait and verify rollback
-          sleep 20
+          # Wait for rollback to stabilize
+          sleep 40
           
           BACKEND_STATUS=$(ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
             "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/v1/actuator/health" || echo "000")
           
           if [ "$BACKEND_STATUS" = "200" ]; then
-            echo "Rollback successful"
+            echo "Rollback successful - backend is responding"
           else
-            echo "Rollback may have failed, manual intervention required"
+            echo "Rollback status unclear - backend not responding (HTTP $BACKEND_STATUS)"
+            echo "Manual intervention may be required"
           fi
       
       - name: Verify deployment
-        if: success()
+        if: success() && steps.health_check.outputs.healthy == 'true'
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
             cd ~/mealmap
             echo "=== Container Status ==="
             docker compose ps
             echo ""
-            echo "=== Backend Logs (last 20 lines) ==="
-            docker compose logs backend --tail=20
+            echo "=== Backend Health ==="
+            curl -s http://localhost:8080/v1/actuator/health | jq . || echo "Could not fetch health status"
+            echo ""
+            echo "=== Recent Backend Logs ==="
+            docker compose logs backend --tail=30
           EOF
       
       - name: Send success notification
