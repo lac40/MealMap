@@ -47,15 +47,15 @@ const RegisterPage = () => {
 
   if (registrationSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-50 px-4 py-12">
+      <div className="min-h-screen flex items-center justify-center bg-muted px-4 py-12">
         <div className="w-full max-w-md">
           <Card>
             <CardContent className="pt-6 text-center">
               <CheckCircle className="h-16 w-16 text-success-600 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-ink-900 mb-2">
+              <h2 className="text-2xl font-bold text-foreground mb-2">
                 Registration Successful!
               </h2>
-              <p className="text-ink-700 mb-6">
+              <p className="text-foreground mb-6">
                 We've sent a verification email to your address. Please check your inbox
                 and verify your email to complete the registration.
               </p>
@@ -70,12 +70,12 @@ const RegisterPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-50 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-muted px-4 py-12">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-ink-900">{config.appName}</h1>
-          <p className="mt-2 text-ink-700">Start planning your meals today</p>
+          <h1 className="text-3xl font-bold text-foreground">{config.appName}</h1>
+          <p className="mt-2 text-foreground">Start planning your meals today</p>
         </div>
 
         {/* Register Card */}
@@ -136,7 +136,7 @@ const RegisterPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-ink-700 hover:text-ink-900 dark:text-ink-300 dark:hover:text-ink-100 focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded p-1"
+                  className="absolute right-3 top-9 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded p-1"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   disabled={registerMutation.isPending}
                   tabIndex={-1}
@@ -164,7 +164,7 @@ const RegisterPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-9 text-ink-700 hover:text-ink-900 dark:text-ink-300 dark:hover:text-ink-100 focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded p-1"
+                  className="absolute right-3 top-9 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded p-1"
                   aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                   disabled={registerMutation.isPending}
                   tabIndex={-1}
@@ -244,7 +244,7 @@ const RegisterPage = () => {
 
             {/* Sign In Link */}
             <div className="mt-6 text-center">
-              <p className="text-sm text-ink-700">
+              <p className="text-sm text-foreground">
                 Already have an account?{' '}
                 <Link
                   to="/login"
@@ -258,7 +258,7 @@ const RegisterPage = () => {
         </Card>
 
         {/* Footer */}
-        <p className="mt-8 text-center text-sm text-ink-700">
+        <p className="mt-8 text-center text-sm text-foreground">
           By creating an account, you agree to our{' '}
           <a
             href="/terms"

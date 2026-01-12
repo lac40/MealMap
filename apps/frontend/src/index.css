@@ -146,6 +146,11 @@
     border-color: rgb(var(--color-border));
   }
   
+  /* Placeholder utilities */
+  .placeholder-muted-foreground::placeholder {
+    color: rgb(var(--color-muted-foreground));
+  }
+  
   /* Skeleton loading animation */
   .skeleton {
     @apply animate-skeleton;

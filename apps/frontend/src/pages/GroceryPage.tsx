@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { motion } from 'framer-motion'
 import {
   computeGroceryList,
   updateGroceryList,
@@ -84,10 +85,15 @@ const GroceryPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex justify-between items-center"
+      >
         <div className="flex items-center gap-3">
           <ShoppingCart size={32} className="text-primary-600 dark:text-primary-400" />
-          <h1 className="text-3xl font-bold text-ink-900 dark:text-ink-50">Grocery List</h1>
+          <h1 className="text-3xl font-bold text-foreground">Grocery List</h1>
         </div>
         <div className="flex gap-2">
           <button
@@ -98,20 +104,25 @@ const GroceryPage = () => {
             Generate from Planner
           </button>
           {groceryList && (
-            <button className="flex items-center gap-2 px-4 py-2 border border-surface-300 dark:border-ink-600 rounded-lg hover:bg-surface-100 dark:hover:bg-ink-700 text-ink-900 dark:text-ink-50 transition-colors">
+            <button className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted text-foreground transition-colors">
               <Download size={20} />
               Export
             </button>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {!groceryList && (
-        <div className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-md border border-surface-200 dark:border-ink-700">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="bg-muted rounded-2xl shadow-md border border-border"
+        >
           <div className="p-12 text-center">
-            <ShoppingCart size={64} className="mx-auto text-ink-400 dark:text-ink-500 mb-4" />
-            <h2 className="text-xl font-semibold text-ink-900 dark:text-ink-50 mb-2">No Grocery List Yet</h2>
-            <p className="text-ink-600 dark:text-ink-400 mb-6">
+            <ShoppingCart size={64} className="mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">No Grocery List Yet</h2>
+            <p className="text-muted-foreground mb-6">
               Generate a grocery list from your weekly planner to get started.
             </p>
             <button
@@ -121,19 +132,19 @@ const GroceryPage = () => {
               Generate from Planner
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {groceryList && (
         <div className="space-y-6">
           {groceryList.trips.map((trip, tripIndex) => (
-            <div key={tripIndex} className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-md border border-surface-200 dark:border-ink-700">
-              <div className="p-4 border-b border-surface-200 dark:border-ink-700 bg-surface-100 dark:bg-ink-750">
+            <div key={tripIndex} className="bg-muted rounded-2xl shadow-md border border-border">
+              <div className="p-4 border-b border-border bg-muted">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-ink-900 dark:text-ink-50">
+                  <h2 className="text-lg font-semibold text-foreground">
                     Trip {trip.tripIndex + 1}
                   </h2>
-                  <div className="flex items-center gap-2 text-sm text-ink-600 dark:text-ink-400">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar size={16} />
                     <span>
                       {new Date(trip.dateRange.from).toLocaleDateString()} -{' '}
@@ -145,11 +156,11 @@ const GroceryPage = () => {
 
               <div className="p-4">
                 {trip.items.length === 0 ? (
-                  <p className="text-center text-ink-500 dark:text-ink-400 py-4">No items for this trip</p>
+                  <p className="text-center text-muted-foreground py-4">No items for this trip</p>
                 ) : (
                   Object.entries(groupItemsByCategory(trip.items)).map(([category, items]) => (
                     <div key={category} className="mb-6 last:mb-0">
-                      <h3 className="text-sm font-semibold text-ink-700 dark:text-ink-300 mb-3 uppercase tracking-wide">
+                      <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
                         {category}
                       </h3>
                       <div className="space-y-2">
@@ -162,8 +173,8 @@ const GroceryPage = () => {
                               key={item.ingredientId}
                               className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
                                 item.checked
-                                  ? 'bg-surface-100 dark:bg-ink-750 border-surface-200 dark:border-ink-600'
-                                  : 'bg-white dark:bg-ink-900 border-surface-300 dark:border-ink-600 hover:border-primary-300 dark:hover:border-primary-600'
+                                  ? 'bg-muted border-border dark:border-ink-600'
+                                  : 'bg-card border-border hover:border-primary-300 dark:hover:border-primary-600'
                               }`}
                             >
                               <button
@@ -179,13 +190,13 @@ const GroceryPage = () => {
                               <div className="flex-1">
                                 <p
                                   className={`font-medium ${
-                                    item.checked ? 'text-ink-400 dark:text-ink-500 line-through' : 'text-ink-900 dark:text-ink-50'
+                                    item.checked ? 'text-muted-foreground line-through' : 'text-foreground'
                                   }`}
                                 >
                                   {item.ingredientName || 'Unknown Ingredient'}
                                 </p>
                                 <div className="flex gap-4 text-sm mt-1">
-                                  <span className="text-ink-500 dark:text-ink-400">
+                                  <span className="text-muted-foreground">
                                     Need: {item.needed.amount} {item.needed.unit}
                                   </span>
                                   <span className="text-primary-600 dark:text-primary-400 font-medium">
@@ -209,18 +220,18 @@ const GroceryPage = () => {
       {/* Generate Modal */}
       {showGenerateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 dark:bg-opacity-80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-2xl max-w-md w-full border border-surface-200 dark:border-ink-700">
+          <div className="bg-muted rounded-2xl shadow-2xl max-w-md w-full border border-border">
             <div className="p-6">
-              <h2 className="text-xl font-bold text-ink-900 dark:text-ink-50 mb-4">Generate Grocery List</h2>
+              <h2 className="text-xl font-bold text-foreground mb-4">Generate Grocery List</h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink-700 dark:text-ink-300 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Select Planner Week
                   </label>
                   <select
                     id="planWeekSelect"
-                    className="w-full px-3 py-2 border border-surface-300 dark:border-ink-600 bg-white dark:bg-ink-900 text-ink-900 dark:text-ink-50 rounded-lg focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-border bg-card text-foreground rounded-lg focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
                   >
                     <option value="">Select a week</option>
                     {plannerWeeks?.data?.map((week: any) => (
@@ -232,12 +243,12 @@ const GroceryPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-ink-700 dark:text-ink-300 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Number of Trips
                   </label>
                   <select
                     id="tripsSelect"
-                    className="w-full px-3 py-2 border border-surface-300 dark:border-ink-600 bg-white dark:bg-ink-900 text-ink-900 dark:text-ink-50 rounded-lg focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-border bg-card text-foreground rounded-lg focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent"
                     defaultValue="2"
                   >
                     <option value="1">1 trip (whole week)</option>
@@ -251,7 +262,7 @@ const GroceryPage = () => {
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setShowGenerateModal(false)}
-                  className="flex-1 px-4 py-2 border border-surface-300 dark:border-ink-600 rounded-lg hover:bg-surface-100 dark:hover:bg-ink-700 text-ink-900 dark:text-ink-50 transition-colors"
+                  className="flex-1 px-4 py-2 border border-border rounded-lg hover:bg-muted text-foreground transition-colors"
                 >
                   Cancel
                 </button>

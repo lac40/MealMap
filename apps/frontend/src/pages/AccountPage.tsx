@@ -12,6 +12,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
+import { motion } from 'framer-motion'
 import { User, Lock, Trash2, Palette, AlertTriangle, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/authStore'
@@ -30,12 +31,16 @@ const AccountPage = () => {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <h1 className="text-3xl font-bold text-foreground mb-2">Account Settings</h1>
         <p className="text-muted-foreground">
           Manage your profile, security, and preferences
         </p>
-      </div>
+      </motion.div>
 
       {/* Profile Section */}
       <ProfileSection user={user} />
@@ -408,7 +413,7 @@ const DangerZoneSection = ({ showDeleteDialog, setShowDeleteDialog }: DangerZone
         {/* Delete Confirmation Dialog */}
         <Dialog.Root open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-ink-900/50 dark:bg-black/70 z-50 animate-fade-in" />
+            <Dialog.Overlay className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 animate-fade-in" />
             <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card border border-border rounded-modal shadow-elevated p-6 w-full max-w-md z-50 animate-scale-in focus:outline-none">
               <Dialog.Title className="text-xl font-semibold text-foreground mb-2">
                 Delete Account

@@ -308,6 +308,15 @@ cp .env.example .env
 docker-compose up -d
 ```
 
+**⚠️ Important - Data Persistence:**
+- Database data is stored in a Docker volume (`mealmap_mssql-data`)
+- To **stop** services without losing data: `docker-compose stop`
+- To **restart** services: `docker-compose start` or `docker-compose up -d`
+- To **rebuild** after code changes: `docker-compose up --build -d`
+- **NEVER** run `docker-compose down -v` unless you want to delete all data!
+  - `docker-compose down` stops and removes containers (keeps data)
+  - `docker-compose down -v` **DELETES ALL DATABASE DATA** (removes volumes)
+
 For manual setup, see **Backend Setup > Option 2** above.
 
 ### Migrations

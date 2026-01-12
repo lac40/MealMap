@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
+import { motion } from 'framer-motion'
 import { Plus, Edit2, Trash2, X, Package } from 'lucide-react'
 import {
   getPantryItems,
@@ -163,9 +164,9 @@ const PantryPage = () => {
   if (isLoadingPantry) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-ink-900 dark:text-ink-50 mb-6">Pantry</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-6">Pantry</h1>
         <div className="text-center py-12">
-          <div className="inline-flex items-center gap-3 text-ink-600 dark:text-ink-400">
+          <div className="inline-flex items-center gap-3 text-muted-foreground">
             <div className="w-5 h-5 border-2 border-primary-600 dark:border-primary-400 border-t-transparent rounded-full animate-spin" />
             <p>Loading pantry...</p>
           </div>
@@ -177,7 +178,7 @@ const PantryPage = () => {
   if (pantryError) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-ink-900 dark:text-ink-50 mb-6">Pantry</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-6">Pantry</h1>
         <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-8 text-center border border-red-200 dark:border-red-800">
           <p className="text-red-600 dark:text-red-400">
             Error loading pantry: {getErrorMessage(pantryError)}
@@ -190,57 +191,62 @@ const PantryPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex justify-between items-center"
+      >
         <div>
-          <h1 className="text-3xl font-bold text-ink-900 dark:text-ink-50 mb-2">Pantry</h1>
-          <p className="text-ink-600 dark:text-ink-400">Manage your ingredient inventory</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Pantry</h1>
+          <p className="text-muted-foreground">Manage your ingredient inventory</p>
         </div>
         <Button onClick={() => handleOpenForm()} leftIcon={<Plus className="h-5 w-5" />}>
           Add Item
         </Button>
-      </div>
+      </motion.div>
 
       {/* Pantry Items */}
       {pantryItems.length === 0 ? (
-        <div className="bg-surface-50 dark:bg-ink-800 rounded-2xl p-12 text-center border border-surface-200 dark:border-ink-700">
-          <Package className="h-12 w-12 mx-auto mb-4 text-ink-400 dark:text-ink-500 opacity-50" />
-          <p className="text-ink-700 dark:text-ink-300 text-lg mb-4">Your pantry is empty</p>
-          <p className="text-ink-600 dark:text-ink-400 mb-6">Start adding ingredients to track your inventory</p>
+        <div className="bg-muted rounded-2xl p-12 text-center border border-border">
+          <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+          <p className="text-foreground text-lg mb-4">Your pantry is empty</p>
+          <p className="text-muted-foreground mb-6">Start adding ingredients to track your inventory</p>
           <Button onClick={() => handleOpenForm()}>Add Your First Item</Button>
         </div>
       ) : (
         <div className="space-y-6">
           {Object.entries(itemsByCategory).map(([categoryName, items]) => (
-            <div key={categoryName} className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-md border border-surface-200 dark:border-ink-700">
-              <div className="p-4 border-b border-surface-200 dark:border-ink-700">
-                <h2 className="text-lg font-semibold text-ink-900 dark:text-ink-50">{categoryName}</h2>
+            <div key={categoryName} className="bg-muted rounded-2xl shadow-md border border-border">
+              <div className="p-4 border-b border-border">
+                <h2 className="text-lg font-semibold text-foreground">{categoryName}</h2>
               </div>
               <div className="p-4">
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-4 bg-surface-100 dark:bg-ink-750 rounded-lg hover:shadow-md transition-shadow"
+                      className="flex items-center justify-between p-4 bg-muted rounded-lg hover:shadow-md transition-shadow"
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-ink-900 dark:text-ink-50 truncate">
+                        <div className="font-medium text-foreground truncate">
                           {item.ingredientName}
                         </div>
-                        <div className="text-sm text-ink-600 dark:text-ink-400">
+                        <div className="text-sm text-muted-foreground">
                           {item.quantity.amount} {item.quantity.unit}
                         </div>
                       </div>
                       <div className="flex gap-2 ml-2">
                         <button
                           onClick={() => handleOpenForm(item)}
-                          className="p-2 text-ink-600 dark:text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg hover:bg-surface-200 dark:hover:bg-ink-700 transition-colors"
+                          className="p-2 text-muted-foreground hover:text-primary-600 dark:hover:text-primary-400 rounded-lg hover:bg-muted transition-colors"
                           aria-label="Edit item"
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(item.id, item.ingredientName)}
-                          className="p-2 text-ink-600 dark:text-ink-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-surface-200 dark:hover:bg-ink-700 transition-colors"
+                          className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-muted transition-colors"
                           aria-label="Delete item"
                           disabled={deleteMutation.isPending}
                         >
@@ -263,17 +269,17 @@ const PantryPage = () => {
           onClick={handleCloseForm}
         >
           <div
-            className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-2xl max-w-md w-full border border-surface-200 dark:border-ink-700"
+            className="bg-muted rounded-2xl shadow-2xl max-w-md w-full border border-border"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-ink-900 dark:text-ink-50">
+                <h2 className="text-2xl font-bold text-foreground">
                   {editingItem ? 'Update Pantry Item' : 'Add Pantry Item'}
                 </h2>
                 <button
                   onClick={handleCloseForm}
-                  className="p-2 text-ink-600 dark:text-ink-400 hover:text-ink-900 dark:hover:text-ink-50 rounded-lg hover:bg-surface-100 dark:hover:bg-ink-700 transition-colors"
+                  className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors"
                   aria-label="Close"
                 >
                   <X className="h-6 w-6" />

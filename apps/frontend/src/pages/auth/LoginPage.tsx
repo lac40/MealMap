@@ -44,12 +44,12 @@ const LoginPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-50 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-muted px-4 py-12">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-ink-900">{config.appName}</h1>
-          <p className="mt-2 text-ink-700">Plan meals, shop smart</p>
+          <h1 className="text-3xl font-bold text-foreground">{config.appName}</h1>
+          <p className="mt-2 text-foreground">Plan meals, shop smart</p>
         </div>
 
         {/* Login Card */}
@@ -97,7 +97,7 @@ const LoginPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-ink-700 hover:text-ink-900 dark:text-ink-300 dark:hover:text-ink-100 focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded p-1"
+                  className="absolute right-3 top-9 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-secondary-600 rounded p-1"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   disabled={loginMutation.isPending}
                   tabIndex={-1}
@@ -135,7 +135,7 @@ const LoginPage = () => {
 
             {/* Sign Up Link */}
             <div className="mt-6 text-center">
-              <p className="text-sm text-ink-700">
+              <p className="text-sm text-foreground">
                 Don't have an account?{' '}
                 <Link
                   to="/register"
@@ -149,7 +149,7 @@ const LoginPage = () => {
         </Card>
 
         {/* Footer */}
-        <p className="mt-8 text-center text-sm text-ink-700">
+        <p className="mt-8 text-center text-sm text-foreground">
           By signing in, you agree to our{' '}
           <a
             href="/terms"

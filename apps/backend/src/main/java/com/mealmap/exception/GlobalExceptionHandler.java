@@ -3,6 +3,7 @@ package com.mealmap.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -56,6 +57,17 @@ public class GlobalExceptionHandler {
         );
         problemDetail.setTitle("Bad Request");
         problemDetail.setType(URI.create("https://api.mealmap.app/problems/bad-request"));
+        return problemDetail;
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ProblemDetail handleBadCredentialsException(BadCredentialsException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNAUTHORIZED,
+                ex.getMessage()
+        );
+        problemDetail.setTitle("Invalid Credentials");
+        problemDetail.setType(URI.create("https://api.mealmap.app/problems/invalid-credentials"));
         return problemDetail;
     }
 

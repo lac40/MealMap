@@ -67,7 +67,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-surface-50 via-primary-50/30 to-accent-50/20 dark:from-ink-950 dark:via-ink-900 dark:to-ink-800 flex items-center justify-center px-4 py-12">
         <div className="max-w-md w-full">
-          <div className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-xl p-8 space-y-6 border border-surface-200 dark:border-ink-700">
+          <div className="bg-muted rounded-2xl shadow-xl p-8 space-y-6 border border-border">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
                 <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
@@ -76,10 +76,10 @@ export default function ResetPasswordPage() {
               </div>
               
               <div className="space-y-2">
-                <h1 className="text-2xl font-bold text-ink-900 dark:text-ink-50">
+                <h1 className="text-2xl font-bold text-foreground">
                   Password Reset Successfully
                 </h1>
-                <p className="text-ink-600 dark:text-ink-300">
+                <p className="text-foreground">
                   Your password has been reset. You can now log in with your new password.
                 </p>
               </div>
@@ -87,7 +87,7 @@ export default function ResetPasswordPage() {
 
             <Link
               to="/login"
-              className="block w-full px-4 py-3 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-surface-50 font-medium rounded-lg transition-colors text-center"
+              className="block w-full px-4 py-3 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium rounded-lg transition-colors text-center"
             >
               Go to Login
             </Link>
@@ -101,7 +101,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-surface-50 via-primary-50/30 to-accent-50/20 dark:from-ink-950 dark:via-ink-900 dark:to-ink-800 flex items-center justify-center px-4 py-12">
         <div className="max-w-md w-full">
-          <div className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-xl p-8 space-y-6 border border-surface-200 dark:border-ink-700">
+          <div className="bg-muted rounded-2xl shadow-xl p-8 space-y-6 border border-border">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
                 <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
@@ -110,10 +110,10 @@ export default function ResetPasswordPage() {
               </div>
               
               <div className="space-y-2">
-                <h1 className="text-2xl font-bold text-ink-900 dark:text-ink-50">
+                <h1 className="text-2xl font-bold text-foreground">
                   Invalid Reset Link
                 </h1>
-                <p className="text-ink-600 dark:text-ink-300">
+                <p className="text-foreground">
                   The password reset link is invalid or missing. Please request a new one.
                 </p>
               </div>
@@ -121,7 +121,7 @@ export default function ResetPasswordPage() {
 
             <Link
               to="/forgot-password"
-              className="block w-full px-4 py-3 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-surface-50 font-medium rounded-lg transition-colors text-center"
+              className="block w-full px-4 py-3 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium rounded-lg transition-colors text-center"
             >
               Request New Link
             </Link>
@@ -140,22 +140,22 @@ export default function ResetPasswordPage() {
               MealMap
             </h1>
           </Link>
-          <p className="mt-2 text-sm text-ink-600 dark:text-ink-400">
+          <p className="mt-2 text-sm text-muted-foreground">
             Fontys S3 Individual Project
           </p>
         </div>
 
-        <div className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-xl p-8 space-y-6 border border-surface-200 dark:border-ink-700">
+        <div className="bg-muted rounded-2xl shadow-xl p-8 space-y-6 border border-border">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
                 <Lock className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               </div>
-              <h2 className="text-2xl font-bold text-ink-900 dark:text-ink-50">
+              <h2 className="text-2xl font-bold text-foreground">
                 Reset Password
               </h2>
             </div>
-            <p className="text-ink-600 dark:text-ink-300">
+            <p className="text-foreground">
               Enter your new password below.
             </p>
           </div>
@@ -164,7 +164,7 @@ export default function ResetPasswordPage() {
             <div>
               <label
                 htmlFor="newPassword"
-                className="block text-sm font-medium text-ink-700 dark:text-ink-200 mb-2"
+                className="block text-sm font-medium text-foreground mb-2"
               >
                 New Password
               </label>
@@ -178,15 +178,15 @@ export default function ResetPasswordPage() {
                   className={`w-full px-4 py-3 pr-12 rounded-lg border ${
                     errors.newPassword
                       ? 'border-red-500 focus:ring-red-500'
-                      : 'border-surface-300 dark:border-ink-600 focus:ring-primary-500'
-                  } bg-surface-50 dark:bg-ink-900 text-ink-900 dark:text-ink-50 placeholder-ink-400 dark:placeholder-ink-500 focus:outline-none focus:ring-2 transition-colors`}
+                      : 'border-border focus:ring-primary-500'
+                  } bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 transition-colors`}
                   placeholder="Enter new password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   tabIndex={-1}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600 dark:hover:text-ink-200 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5" />
@@ -200,7 +200,7 @@ export default function ResetPasswordPage() {
                   {errors.newPassword.message}
                 </p>
               )}
-              <p className="mt-2 text-xs text-ink-500 dark:text-ink-400">
+              <p className="mt-2 text-xs text-muted-foreground">
                 Minimum 8 characters with at least one letter and one number
               </p>
             </div>
@@ -208,7 +208,7 @@ export default function ResetPasswordPage() {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="block text-sm font-medium text-ink-700 dark:text-ink-200 mb-2"
+                className="block text-sm font-medium text-foreground mb-2"
               >
                 Confirm Password
               </label>
@@ -222,15 +222,15 @@ export default function ResetPasswordPage() {
                   className={`w-full px-4 py-3 pr-12 rounded-lg border ${
                     errors.confirmPassword
                       ? 'border-red-500 focus:ring-red-500'
-                      : 'border-surface-300 dark:border-ink-600 focus:ring-primary-500'
-                  } bg-surface-50 dark:bg-ink-900 text-ink-900 dark:text-ink-50 placeholder-ink-400 dark:placeholder-ink-500 focus:outline-none focus:ring-2 transition-colors`}
+                      : 'border-border focus:ring-primary-500'
+                  } bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 transition-colors`}
                   placeholder="Confirm new password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   tabIndex={-1}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-600 dark:hover:text-ink-200 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="w-5 h-5" />
@@ -250,23 +250,23 @@ export default function ResetPasswordPage() {
               type="submit"
               disabled={isSubmitting}
               tabIndex={0}
-              className="w-full px-4 py-3 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-surface-50 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-ink-800"
+              className="w-full px-4 py-3 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-ink-800"
             >
               {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
             </button>
           </form>
 
-          <div className="pt-4 border-t border-surface-200 dark:border-ink-700 text-center">
+          <div className="pt-4 border-t border-border text-center">
             <Link
               to="/login"
-              className="text-sm text-ink-600 dark:text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              className="text-sm text-muted-foreground hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             >
               Back to Login
             </Link>
           </div>
         </div>
 
-        <p className="mt-6 text-center text-sm text-ink-600 dark:text-ink-400">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Need help?{' '}
           <a
             href="mailto:l.kornis@student.fontys.nl"

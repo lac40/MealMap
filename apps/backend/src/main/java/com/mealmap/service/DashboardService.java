@@ -24,13 +24,16 @@ public class DashboardService {
     private final PlannerWeekRepository plannerWeekRepository;
     private final PantryItemRepository pantryItemRepository;
 
+    private static final UUID SYSTEM_TEMPLATE_USER_ID = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+
     public DashboardStatsDto getDashboardStats() {
         User currentUser = getCurrentUser();
         UUID householdId = currentUser.getHousehold() != null ? currentUser.getHousehold().getId() : null;
         List<UUID> householdIds = householdId != null ? Collections.singletonList(householdId) : Collections.emptyList();
 
-        // Count ingredients (user only for now)
-        long ingredientsCount = ingredientRepository.countByOwnerUserId(currentUser.getId());
+        // Count ingredients (user + base system ingredients)
+        List<UUID> ingredientOwnerIds = List.of(currentUser.getId(), SYSTEM_TEMPLATE_USER_ID);
+        long ingredientsCount = ingredientRepository.countByOwnerUserIdIn(ingredientOwnerIds);
 
         // Count recipes (user only for now)
         long recipesCount = recipeRepository.countByOwnerUserId(currentUser.getId());

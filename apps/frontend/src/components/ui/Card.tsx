@@ -11,7 +11,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          'rounded-card bg-white p-6',
+          'rounded-card bg-card p-6',
           variant === 'default' && 'shadow-card',
           variant === 'elevated' && 'shadow-elevated',
           className
@@ -51,7 +51,7 @@ const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
     return (
       <h3
         ref={ref}
-        className={cn('text-lg font-semibold text-ink-900', className)}
+        className={cn('text-lg font-semibold text-foreground', className)}
         {...props}
       >
         {children}

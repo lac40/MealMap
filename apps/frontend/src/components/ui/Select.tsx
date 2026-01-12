@@ -24,7 +24,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium text-ink-700 mb-1">
+          <label htmlFor={inputId} className="block text-sm font-medium text-foreground mb-1">
             {label}
             {required && <span className="text-danger-600 ml-1">*</span>}
           </label>
@@ -40,14 +40,14 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             }
             disabled={disabled}
             className={cn(
-              'flex h-11 w-full rounded-button border bg-white px-3 py-2 text-base',
+              'flex h-11 w-full rounded-button border bg-card px-3 py-2 text-base text-foreground',
               'appearance-none pr-10',
               'focus:outline-none focus:ring-2 focus:ring-secondary-600 focus:ring-offset-0 focus:border-transparent',
-              'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-surface-50',
+              'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted',
               'transition-colors',
               error
                 ? 'border-danger-600 focus:ring-danger-600'
-                : 'border-divider-200'
+                : 'border-border'
             )}
             {...props}
           >
@@ -60,7 +60,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           </select>
           
           <ChevronDown 
-            className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-700 pointer-events-none"
+            className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none"
             aria-hidden="true"
           />
         </div>
@@ -72,7 +72,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         )}
         
         {helperText && !error && (
-          <p id={helperId} className="mt-1 text-sm text-ink-700">
+          <p id={helperId} className="mt-1 text-sm text-muted-foreground">
             {helperText}
           </p>
         )}

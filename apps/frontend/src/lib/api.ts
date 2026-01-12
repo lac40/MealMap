@@ -76,8 +76,13 @@ api.interceptors.response.use(
   async (error: AxiosError<ApiError>) => {
     const originalRequest = error.config
     
-    // Only attempt token refresh for 401 errors, and avoid infinite loops
-    if (error.response?.status === 401 && originalRequest && !originalRequest.url?.includes('/auth/refresh')) {
+    // Only attempt token refresh for 401 errors on protected endpoints
+    // Skip token refresh for auth endpoints (login, register, etc.)
+    const isAuthEndpoint = originalRequest?.url?.includes('/auth/login') || 
+                          originalRequest?.url?.includes('/auth/register') ||
+                          originalRequest?.url?.includes('/auth/refresh')
+    
+    if (error.response?.status === 401 && originalRequest && !isAuthEndpoint) {
       // Try to refresh token
       try {
         const { data } = await api.post('/auth/refresh')

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { motion } from 'framer-motion'
 import {
   Plus,
   Search,
@@ -26,6 +27,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 
+const SYSTEM_TEMPLATE_USER_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 
 const IngredientsPage = () => {
   const queryClient = useQueryClient()
@@ -175,6 +177,10 @@ const IngredientsPage = () => {
     return category?.name || 'Unknown'
   }
 
+  const isBaseIngredient = (ingredient: Ingredient) => {
+    return ingredient.ownerUserId === SYSTEM_TEMPLATE_USER_ID
+  }
+
   const ingredients = ingredientsData?.data || []
   const isLoading = isLoadingIngredients || isLoadingCategories
   const isSaving = createMutation.isPending || updateMutation.isPending
@@ -182,24 +188,34 @@ const IngredientsPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-ink-900 dark:text-ink-50">Ingredients</h1>
-        <p className="text-ink-600 dark:text-ink-400">Manage your ingredient library</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-2"
+      >
+        <h1 className="text-3xl font-bold text-foreground">Ingredients</h1>
+        <p className="text-muted-foreground">Manage your ingredient library</p>
+      </motion.div>
 
       {/* Search and Filter Bar */}
-      <div className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-md p-4 border border-surface-200 dark:border-ink-700">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="bg-muted rounded-2xl shadow-md p-4 border border-border"
+      >
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search */}
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-400 dark:text-ink-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search ingredients..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-11 pl-10 pr-4 rounded-lg border border-surface-300 dark:border-ink-600 bg-surface-50 dark:bg-ink-900 text-ink-900 dark:text-ink-50 placeholder-ink-400 dark:placeholder-ink-500 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 transition-colors"
+                className="w-full h-11 pl-10 pr-4 rounded-lg border border-border bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 transition-colors"
               />
             </div>
           </div>
@@ -207,11 +223,11 @@ const IngredientsPage = () => {
           {/* Category Filter */}
           <div className="md:w-64">
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-400 dark:text-ink-500 z-10 pointer-events-none" />
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10 pointer-events-none" />
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full h-11 pl-10 pr-10 rounded-lg border border-surface-300 dark:border-ink-600 bg-surface-50 dark:bg-ink-900 text-ink-900 dark:text-ink-50 appearance-none focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 transition-colors cursor-pointer"
+                className="w-full h-11 pl-10 pr-10 rounded-lg border border-border bg-card text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 transition-colors cursor-pointer"
               >
                 <option value="">All Categories</option>
                 {categories.map((category) => (
@@ -231,12 +247,12 @@ const IngredientsPage = () => {
             Add Ingredient
           </Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Ingredients List */}
       {isLoading ? (
         <div className="text-center py-12">
-          <div className="inline-flex items-center gap-3 text-ink-600 dark:text-ink-400">
+          <div className="inline-flex items-center gap-3 text-muted-foreground">
             <div className="w-5 h-5 border-2 border-primary-600 dark:border-primary-400 border-t-transparent rounded-full animate-spin" />
             <p>Loading ingredients...</p>
           </div>
@@ -248,9 +264,9 @@ const IngredientsPage = () => {
           </p>
         </div>
       ) : ingredients.length === 0 ? (
-        <div className="bg-surface-50 dark:bg-ink-800 rounded-2xl p-12 text-center border border-surface-200 dark:border-ink-700">
-          <Package className="h-12 w-12 mx-auto mb-4 text-ink-400 dark:text-ink-500 opacity-50" />
-          <p className="text-ink-700 dark:text-ink-300 mb-4">
+        <div className="bg-muted rounded-2xl p-12 text-center border border-border">
+          <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+          <p className="text-foreground mb-4">
             {searchQuery || selectedCategory
               ? 'No ingredients found matching your filters'
               : 'No ingredients yet'}
@@ -259,56 +275,68 @@ const IngredientsPage = () => {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {ingredients.map((ingredient) => (
-            <div
-              key={ingredient.id}
-              className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border border-surface-200 dark:border-ink-700 hover:border-primary-300 dark:hover:border-primary-600"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-ink-900 dark:text-ink-50 mb-2">
-                    {ingredient.name}
-                  </h3>
-                  <span className="inline-block px-3 py-1 text-sm font-medium rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
-                    {getCategoryName(ingredient.categoryId)}
-                  </span>
+          {ingredients.map((ingredient) => {
+            const isBase = isBaseIngredient(ingredient)
+            return (
+              <div
+                key={ingredient.id}
+                className="bg-muted rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border border-border hover:border-primary-300 dark:hover:border-primary-600"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-lg font-semibold text-foreground">
+                        {ingredient.name}
+                      </h3>
+                      {isBase && (
+                        <span className="px-2 py-0.5 text-xs font-medium rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                          Base
+                        </span>
+                      )}
+                    </div>
+                    <span className="inline-block px-3 py-1 text-sm font-medium rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                      {getCategoryName(ingredient.categoryId)}
+                    </span>
+                  </div>
+                  {!isBase && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleOpenForm(ingredient)}
+                        className="p-2 text-muted-foreground hover:text-primary-600 dark:hover:text-primary-400 rounded-lg hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        aria-label="Edit ingredient"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(ingredient.id)}
+                        className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                        aria-label="Delete ingredient"
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleOpenForm(ingredient)}
-                    className="p-2 text-ink-600 dark:text-ink-400 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg hover:bg-surface-100 dark:hover:bg-ink-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    aria-label="Edit ingredient"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(ingredient.id)}
-                    className="p-2 text-ink-600 dark:text-ink-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-surface-100 dark:hover:bg-ink-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
-                    aria-label="Delete ingredient"
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm text-ink-600 dark:text-ink-400">
+              <div className="space-y-2 text-sm text-muted-foreground">
                 <div>
-                  <span className="font-medium text-ink-700 dark:text-ink-300">Default Unit:</span>{' '}
+                  <span className="font-medium text-foreground">Default Unit:</span>{' '}
                   {ingredient.defaultUnit}
                 </div>
                 <div>
-                  <span className="font-medium text-ink-700 dark:text-ink-300">Package Size:</span>{' '}
+                  <span className="font-medium text-foreground">Package Size:</span>{' '}
                   {ingredient.packageSize.amount} {ingredient.packageSize.unit}
                 </div>
                 {ingredient.notes && (
                   <div>
-                    <span className="font-medium text-ink-700 dark:text-ink-300">Notes:</span>{' '}
+                    <span className="font-medium text-foreground">Notes:</span>{' '}
                     <span>{ingredient.notes}</span>
                   </div>
                 )}
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -319,17 +347,17 @@ const IngredientsPage = () => {
             onClick={handleCloseForm}
           >
             <div
-              className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-surface-200 dark:border-ink-700"
+              className="bg-muted rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-border"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-ink-900 dark:text-ink-50">
+                  <h2 className="text-2xl font-bold text-foreground">
                     {editingIngredient ? 'Edit Ingredient' : 'Add Ingredient'}
                   </h2>
                   <button
                     onClick={handleCloseForm}
-                    className="p-2 text-ink-600 dark:text-ink-400 hover:text-ink-900 dark:hover:text-ink-50 rounded-lg hover:bg-surface-100 dark:hover:bg-ink-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
                     aria-label="Close"
                   >
                     <X className="h-6 w-6" />

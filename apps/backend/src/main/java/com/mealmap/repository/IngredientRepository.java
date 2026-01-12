@@ -19,4 +19,5 @@ public interface IngredientRepository extends JpaRepository<Ingredient, UUID> {
     Page<Ingredient> findByOwnerUserIdInAndCategoryId(List<UUID> ownerUserIds, UUID categoryId, Pageable pageable);
     
     long countByOwnerUserId(UUID ownerUserId);
+    long countByOwnerUserIdIn(List<UUID> ownerUserIds);
 }

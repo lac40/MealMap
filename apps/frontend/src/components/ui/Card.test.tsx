@@ -62,7 +62,7 @@ describe('CardTitle', () => {
   it('applies title styles', () => {
     render(<CardTitle>Title</CardTitle>)
     const title = screen.getByText('Title')
-    expect(title).toHaveClass('text-lg', 'font-semibold', 'text-ink-900')
+    expect(title).toHaveClass('text-lg', 'font-semibold', 'text-foreground')
   })
 
   it('applies custom className', () => {

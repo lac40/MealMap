@@ -59,7 +59,7 @@ const Sidebar = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onToggleMobile}
-              className="fixed inset-0 bg-ink-900/50 dark:bg-black/70 z-40 lg:hidden"
+              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
               aria-hidden="true"
             />
           )}
@@ -227,7 +227,7 @@ const NavLink = ({ to, icon: Icon, children, isCollapsed, onClick }: NavLinkProp
           
           {/* Tooltip for collapsed state */}
           {isCollapsed && (
-            <div className="absolute left-full ml-2 px-2 py-1 bg-ink-900 dark:bg-surface-950 text-white text-sm rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+            <div className="absolute left-full ml-2 px-2 py-1 bg-foreground text-background text-sm rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
               {children}
             </div>
           )}

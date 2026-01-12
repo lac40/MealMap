@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
+import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Plus, X, Trash2 } from 'lucide-react'
 import {
   getPlannerWeeks,
@@ -181,9 +182,9 @@ const PlannerPage = () => {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-ink-900 dark:text-ink-50 mb-6">Weekly Planner</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-6">Weekly Planner</h1>
         <div className="text-center py-12">
-          <div className="inline-flex items-center gap-3 text-ink-600 dark:text-ink-400">
+          <div className="inline-flex items-center gap-3 text-muted-foreground">
             <div className="w-5 h-5 border-2 border-primary-600 dark:border-primary-400 border-t-transparent rounded-full animate-spin" />
             <p>Loading planner...</p>
           </div>
@@ -195,10 +196,15 @@ const PlannerPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex justify-between items-center"
+      >
         <div>
-          <h1 className="text-3xl font-bold text-ink-900 dark:text-ink-50 mb-2">Weekly Planner</h1>
-          <p className="text-ink-600 dark:text-ink-400">
+          <h1 className="text-3xl font-bold text-foreground mb-2">Weekly Planner</h1>
+          <p className="text-muted-foreground">
             Week of {weekDates[0].toLocaleDateString()} - {weekDates[6].toLocaleDateString()}
           </p>
         </div>
@@ -210,18 +216,23 @@ const PlannerPage = () => {
             Next
           </Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Planner Grid */}
-      <div className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-md overflow-x-auto border border-surface-200 dark:border-ink-700">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="bg-muted rounded-2xl shadow-md overflow-x-auto border border-border"
+      >
         <div className="min-w-[800px]">
           {/* Days Header */}
-          <div className="grid grid-cols-8 gap-px bg-surface-300 dark:bg-ink-600">
-            <div className="bg-surface-100 dark:bg-ink-750 p-4 font-semibold text-ink-900 dark:text-ink-50">Meal</div>
+          <div className="grid grid-cols-8 gap-px bg-border">
+            <div className="bg-muted p-4 font-semibold text-foreground">Meal</div>
             {days.map((day, index) => (
-              <div key={day} className="bg-surface-100 dark:bg-ink-750 p-4 font-semibold text-center text-ink-900 dark:text-ink-50">
+              <div key={day} className="bg-muted p-4 font-semibold text-center text-foreground">
                 <div>{day}</div>
-                <div className="text-sm text-ink-600 dark:text-ink-400 font-normal">
+                <div className="text-sm text-muted-foreground font-normal">
                   {weekDates[index].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </div>
               </div>
@@ -230,14 +241,14 @@ const PlannerPage = () => {
 
           {/* Meal Slots */}
           {mealSlots.map(({ key, label }) => (
-            <div key={key} className="grid grid-cols-8 gap-px bg-surface-300 dark:bg-ink-600">
-              <div className="bg-surface-50 dark:bg-ink-800 p-4 font-medium text-ink-800 dark:text-ink-200">{label}</div>
+            <div key={key} className="grid grid-cols-8 gap-px bg-border">
+              <div className="bg-muted p-4 font-medium text-foreground">{label}</div>
               {weekDates.map((date) => {
                 const items = getItemsForSlot(date, key)
                 return (
                   <div
                     key={`${formatDate(date)}-${key}`}
-                    className="bg-surface-50 dark:bg-ink-800 p-2 min-h-[100px] hover:bg-surface-100 dark:hover:bg-ink-750 transition-colors"
+                    className="bg-muted p-2 min-h-[100px] hover:bg-muted/50 transition-colors"
                   >
                     <div className="space-y-2">
                       {items.map((item) => (
@@ -247,14 +258,14 @@ const PlannerPage = () => {
                         >
                           <div className="flex justify-between items-start gap-1">
                             <div className="flex-1 min-w-0">
-                              <div className="font-medium text-ink-900 dark:text-ink-50 truncate">
+                              <div className="font-medium text-foreground truncate">
                                 {item.recipeName || 'Custom Meal'}
                               </div>
-                              <div className="text-ink-600 dark:text-ink-400">{item.portions} portions</div>
+                              <div className="text-muted-foreground">{item.portions} portions</div>
                             </div>
                             <button
                               onClick={() => handleDeleteItem(item.id)}
-                              className="p-1 text-ink-600 dark:text-ink-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-surface-100 dark:hover:bg-ink-700 transition-colors"
+                              className="p-1 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-muted transition-colors"
                               aria-label="Remove meal"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -264,7 +275,7 @@ const PlannerPage = () => {
                       ))}
                       <button
                         onClick={() => handleOpenAddModal(date, key)}
-                        className="w-full p-2 border-2 border-dashed border-surface-300 dark:border-ink-600 rounded-lg text-ink-600 dark:text-ink-400 hover:border-primary-500 dark:hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors text-sm flex items-center justify-center gap-1"
+                        className="w-full p-2 border-2 border-dashed border-border rounded-lg text-muted-foreground hover:border-primary-500 dark:hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors text-sm flex items-center justify-center gap-1"
                       >
                         <Plus className="h-4 w-4" />
                         Add
@@ -276,7 +287,7 @@ const PlannerPage = () => {
             </div>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Add Meal Modal */}
       {isAddModalOpen && selectedSlot && (
@@ -285,15 +296,15 @@ const PlannerPage = () => {
           onClick={handleCloseAddModal}
         >
           <div
-            className="bg-surface-50 dark:bg-ink-800 rounded-2xl shadow-2xl max-w-md w-full border border-surface-200 dark:border-ink-700"
+            className="bg-muted rounded-2xl shadow-2xl max-w-md w-full border border-border"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-ink-900 dark:text-ink-50">Add Meal</h2>
+                <h2 className="text-2xl font-bold text-foreground">Add Meal</h2>
                 <button
                   onClick={handleCloseAddModal}
-                  className="p-2 text-ink-600 dark:text-ink-400 hover:text-ink-900 dark:hover:text-ink-50 rounded-lg hover:bg-surface-100 dark:hover:bg-ink-700 transition-colors"
+                  className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors"
                   aria-label="Close"
                 >
                   <X className="h-6 w-6" />
@@ -302,9 +313,9 @@ const PlannerPage = () => {
 
               <form onSubmit={handleSubmit(handleAddMeal)} className="space-y-4">
                 <div>
-                  <p className="text-sm text-ink-600 dark:text-ink-400 mb-4">
-                    <strong className="text-ink-700 dark:text-ink-300">Date:</strong> {selectedSlot.date.toLocaleDateString()}<br />
-                    <strong className="text-ink-700 dark:text-ink-300">Meal Slot:</strong> {mealSlots.find(s => s.key === selectedSlot.slot)?.label}
+                  <p className="text-sm text-muted-foreground mb-4">
+                    <strong className="text-foreground">Date:</strong> {selectedSlot.date.toLocaleDateString()}<br />
+                    <strong className="text-foreground">Meal Slot:</strong> {mealSlots.find(s => s.key === selectedSlot.slot)?.label}
                   </p>
                 </div>
 
