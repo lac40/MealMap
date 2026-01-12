@@ -128,6 +128,41 @@ jobs:
           BACKEND_IMAGE_PREVIOUS=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:latest
           FRONTEND_IMAGE_PREVIOUS=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend:latest
           EOF
+          
+          # Validate critical variables are not empty
+          echo "Validating .env configuration..."
+          MISSING_VARS=""
+          
+          for var in DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD JWT_SECRET VITE_API_BASE_URL CORS_ALLOWED_ORIGINS; do
+            VALUE=$(grep "^$var=" deployment/.env | cut -d'=' -f2)
+            if [ -z "$VALUE" ]; then
+              echo "❌ Missing or empty: $var"
+              MISSING_VARS="$MISSING_VARS $var"
+            else
+              # Show first 20 chars (mask sensitive data)
+              DISPLAY_VALUE="${VALUE:0:20}"
+              if [ ${#VALUE} -gt 20 ]; then DISPLAY_VALUE="${DISPLAY_VALUE}..."; fi
+              echo "✓ $var = $DISPLAY_VALUE"
+            fi
+          done
+          
+          if [ ! -z "$MISSING_VARS" ]; then
+            echo ""
+            echo "❌ ERROR: The following required secrets are missing or empty:$MISSING_VARS"
+            echo "Please configure these GitHub secrets:"
+            echo "  - DB_HOST (usually 'mssql' for Docker networking)"
+            echo "  - DB_PORT (usually '1433')"
+            echo "  - DB_NAME"
+            echo "  - DB_USER"
+            echo "  - DB_PASSWORD"
+            echo "  - JWT_SECRET"
+            echo "  - VITE_API_BASE_URL"
+            echo "  - CORS_ALLOWED_ORIGINS"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✓ All required environment variables are configured"
       
       - name: Setup SSH
         run: |
@@ -253,10 +288,35 @@ jobs:
             # Stop current containers
             docker compose down
             
+            # Verify .env file exists and has required vars
+            echo "=== Checking .env file ==="
+            if [ ! -f .env ]; then
+              echo "ERROR: .env file not found!"
+              exit 1
+            fi
+            
+            echo "=== Environment variables in .env ==="
+            grep -E "^(DB_|JWT_|SPRING_|VITE_|BACKEND_|FRONTEND_|CORS_)" .env | head -20
+            
+            # Verify images can be pulled
+            echo "=== Verifying images ==="
+            source .env
+            docker pull $BACKEND_IMAGE 2>&1 | head -5
+            docker pull $FRONTEND_IMAGE 2>&1 | head -5
+            
             # Start new containers
+            echo "=== Starting containers ==="
             docker compose up -d
             
-            echo "Deployment initiated"
+            # Wait a moment for containers to start
+            sleep 5
+            
+            # Check container status immediately
+            echo "=== Container status ==="
+            docker compose ps
+            
+            echo "=== Checking if backend is running ==="
+            docker compose logs backend --tail=20
           EOF
       
       - name: Wait for services to start
@@ -274,25 +334,34 @@ jobs:
             ATTEMPT=$((ATTEMPT + 1))
             echo "Health check attempt $ATTEMPT/$MAX_ATTEMPTS"
             
-            # Check backend health with verbose output
-            BACKEND_STATUS=$(ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
-              "curl -s -w '\n%{http_code}' http://localhost:8080/v1/actuator/health" 2>&1 || echo -e "error\n000")
+            # Check if backend container is even running
+            CONTAINER_STATUS=$(ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
+              "docker compose -f ~/mealmap/docker-compose.yml ps backend --format='{{.State}}'" 2>/dev/null || echo "unknown")
             
-            BACKEND_HTTP_CODE=$(echo "$BACKEND_STATUS" | tail -1)
-            BACKEND_RESPONSE=$(echo "$BACKEND_STATUS" | head -1)
+            echo "Container State: $CONTAINER_STATUS"
+            
+            # Check backend health with verbose output
+            BACKEND_RESPONSE=$(ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
+              "curl -v http://localhost:8080/v1/actuator/health 2>&1" || echo "error")
+            
+            # Extract HTTP code from curl response
+            BACKEND_HTTP_CODE=$(echo "$BACKEND_RESPONSE" | grep "< HTTP" | tail -1 | awk '{print $3}' || echo "000")
+            
+            if [ -z "$BACKEND_HTTP_CODE" ] || [ "$BACKEND_HTTP_CODE" = "000" ]; then
+              # Fallback: try simple method
+              BACKEND_HTTP_CODE=$(ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
+                "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/v1/actuator/health" 2>/dev/null || echo "000")
+            fi
             
             # Check frontend
             FRONTEND_STATUS=$(ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
               "curl -s -o /dev/null -w '%{http_code}' http://localhost:80" || echo "000")
             
             echo "Backend HTTP Code: $BACKEND_HTTP_CODE"
-            if [ ! -z "$BACKEND_RESPONSE" ] && [ "$BACKEND_RESPONSE" != "000" ]; then
-              echo "Backend Response: $BACKEND_RESPONSE"
-            fi
             echo "Frontend status: $FRONTEND_STATUS"
             
             if [ "$BACKEND_HTTP_CODE" = "200" ] && [ "$FRONTEND_STATUS" = "200" ]; then
-              echo "Health check passed"
+              echo "✓ Health check passed"
               echo "healthy=true" >> $GITHUB_OUTPUT
               exit 0
             fi
@@ -301,14 +370,28 @@ jobs:
             sleep 10
           done
           
-          echo "Health check failed after $MAX_ATTEMPTS attempts"
+          echo "✗ Health check failed after $MAX_ATTEMPTS attempts"
           echo "healthy=false" >> $GITHUB_OUTPUT
           
-          # Fetch logs for debugging
+          # Fetch detailed logs for debugging
           echo ""
-          echo "=== Backend Logs for Debugging ==="
-          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
-            "docker compose -f ~/mealmap/docker-compose.yml logs backend --tail=50" || echo "Could not fetch backend logs"
+          echo "=== DEBUGGING INFO ==="
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOFDB'
+            echo "=== Docker Compose Status ==="
+            docker compose -f ~/mealmap/docker-compose.yml ps -a
+            
+            echo ""
+            echo "=== Backend Container Logs (last 100 lines) ==="
+            docker compose -f ~/mealmap/docker-compose.yml logs backend --tail=100
+            
+            echo ""
+            echo "=== Database Container Logs (last 50 lines) ==="
+            docker compose -f ~/mealmap/docker-compose.yml logs mssql --tail=50
+            
+            echo ""
+            echo "=== All Container Logs ==="
+            docker compose -f ~/mealmap/docker-compose.yml logs --tail=20
+          EOFDB
           
           exit 1
       
